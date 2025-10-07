@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.leantech.me)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(node server.js)",
+      "Bash(curl -X POST http://localhost:8000/api/initialize-customer )",
+      "Bash(curl:*)",
+      "Bash(open:*)",
+      "Bash(open \"http://localhost:8000/lean-success.html?entity_id=a7ac9fac-1cf2-409d-9c1c-9c9d8252701c&bank_identifier=LEA1_SAMAOB_SAU&customer_id=f95d106b-1114-449d-bdff-3784d34a0227&consent_attempt_id=03d61d06-53b7-4aaf-bc35-4a44d052cfee\")",
+      "Bash(cat:*)",
+      "Bash(python3:*)",
+      "Bash(killall:*)",
+      "Bash(node:*)",
+      "Read(//Users/mohamedali/Desktop/study/**)",
+      "Bash(docker run:*)",
+      "Read(//Users/mohamedali/**)",
+      "mcp__MCP_DOCKER__getAuthenticatedUser",
+      "mcp__MCP_DOCKER__getWorkspaces",
+      "Bash(chmod:*)",
+      "Bash(git add:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git rm:*)",
+      "Bash(bash:*)",
+      "Bash(echo \"EXIT_CODE: $?\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

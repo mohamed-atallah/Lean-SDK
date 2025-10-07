@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lean SDK Test Integration</title>
+
+    <!-- Content Security Policy for images and styles -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.leantech.me https://*.leantech.me; script-src 'self' 'unsafe-inline' https://cdn.leantech.me; style-src 'self' 'unsafe-inline' https://cdn.leantech.me; img-src 'self' https: data:;">
+
+    <!-- Lean SDK Script - Load at page initialization -->
+    <script src="https://cdn.leantech.me/link/loader/prod/sa/latest/lean-link-loader.min.js"
+            onload="window.leanLinkLoaded = true; console.log('✅ Lean Link script loaded')"
+            onerror="window.leanLinkError = true; console.error('❌ Lean Link script failed to load')"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔗 Lean SDK Test Integration</h1>
+            <p class="subtitle">Test the Lean Web SDK connection in Sandbox mode</p>
+        </header>
+
+        <!-- Success Message Banner -->
+        <div id="successBanner" style="display: none; background: linear-gradient(135deg, #d4edda, #c3e6cb); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid #28a745; animation: slideDown 0.5s ease-out;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0 0 5px 0; color: #155724; font-size: 1.4em;">✅ Bank Connection Successful!</h3>
+                    <p style="margin: 0; color: #155724; font-size: 1em;">Your bank account has been connected and the connection data has been saved.</p>
+                    <p id="connectionInfo" style="margin: 10px 0 0 0; color: #155724; font-size: 0.9em; font-family: monospace;"></p>
+                </div>
+                <button onclick="document.getElementById('successBanner').style.display='none'" style="background: transparent; border: none; font-size: 24px; cursor: pointer; color: #155724; padding: 5px 10px;">×</button>
+            </div>
+        </div>
+
+        <style>
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        </style>
+
+        <div class="card">
+            <h2>Step 1: Get Customer Credentials</h2>
+            <p>Choose one of the following options:</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                <!-- Option A: Initialize New Customer -->
+                <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; background: #f9f9f9;">
+                    <h3 style="margin-top: 0; font-size: 1.1em;">Option A: Initialize New Customer</h3>
+                    <p style="font-size: 0.9em;">Create a new customer via API calls</p>
+
+                    <div class="info-box" style="background: #fff9e6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong>🔄 Makes 3 API calls:</strong>
+                        <ol style="margin: 10px 0 0 20px; font-size: 0.85em;">
+                            <li>Get API access token</li>
+                            <li>Create customer</li>
+                            <li>Get customer token</li>
+                        </ol>
+                    </div>
+
+                    <button id="initBtn" class="connect-btn" style="width: 100%;">
+                        🚀 Initialize New Customer
+                    </button>
+                </div>
+
+                <!-- Option B: Get Tokens for Existing Customer -->
+                <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; background: #f9f9f9;">
+                    <h3 style="margin-top: 0; font-size: 1.1em;">Option B: Get Tokens for Existing Customer</h3>
+                    <p style="font-size: 0.9em;">Already have a customer ID? Get fresh tokens</p>
+
+                    <div class="info-box" style="background: #e6f7ff; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <strong>🔄 Makes 2 API calls:</strong>
+                        <ol style="margin: 10px 0 0 20px; font-size: 0.85em;">
+                            <li>Get API access token</li>
+                            <li>Get customer token (using existing customer ID)</li>
+                        </ol>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label for="existingCustomerId" style="font-size: 0.85em; font-weight: 600;">Customer ID</label>
+                        <input
+                            type="text"
+                            id="existingCustomerId"
+                            placeholder="e.g., 82e518a0-19fe-4561-..."
+                            style="font-size: 0.85em; padding: 8px;"
+                        >
+                    </div>
+
+                    <button id="getTokensBtn" class="connect-btn" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        🎫 Get Tokens
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Step 2: Connect Bank Account</h2>
+
+            <div class="form-group">
+                <label for="customerId">Customer ID</label>
+                <input
+                    type="text"
+                    id="customerId"
+                    placeholder="Will be generated after initialization"
+                    value=""
+                    readonly
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="accessToken">Customer Access Token</label>
+                <input
+                    type="text"
+                    id="accessToken"
+                    placeholder="Will be generated after initialization"
+                    value=""
+                    readonly
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="accountType">Account Type</label>
+                <select id="accountType">
+                    <option value="PERSONAL">Personal</option>
+                    <option value="BUSINESS">Business</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="sandboxMode" checked>
+                    Sandbox Mode (Safe Testing)
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="debugMode">
+                    Enable Debug Mode (Show detailed logs)
+                </label>
+            </div>
+
+            <button id="connectBtn" class="connect-btn" disabled>
+                🔗 Connect with Lean
+            </button>
+        </div>
+
+        <div class="card" id="consentManagementCard" style="display: none;">
+            <h2>Step 3: Manage Consents</h2>
+            <p>View and manage your bank connection consents</p>
+
+            <div class="form-group">
+                <label for="consentCustomerId">Customer ID</label>
+                <input
+                    type="text"
+                    id="consentCustomerId"
+                    placeholder="Will be filled after connection"
+                    readonly
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="consentEntityId">Entity ID</label>
+                <input
+                    type="text"
+                    id="consentEntityId"
+                    placeholder="Will be filled after connection"
+                    readonly
+                >
+            </div>
+
+            <button id="listConsentsBtn" class="connect-btn" disabled>
+                📋 List Consents
+            </button>
+
+            <div id="consentsList" style="margin-top: 20px;"></div>
+        </div>
+
+        <div class="card" id="accountDataCard" style="display: none;">
+            <h2>Step 4: Fetch Account Data</h2>
+            <p>After successful connection, fetch account details, balances, and transactions</p>
+
+            <div class="form-group">
+                <label for="entityId">Entity ID (from connection)</label>
+                <input
+                    type="text"
+                    id="entityId"
+                    placeholder="Will be filled after connection"
+                    readonly
+                >
+            </div>
+
+            <button id="fetchAccountsBtn" class="connect-btn" disabled>
+                📊 Fetch Accounts
+            </button>
+
+            <div id="accountsList" style="margin-top: 20px;"></div>
+        </div>
+
+        <div class="card results-card" id="resultsCard" style="display: none;">
+            <h2>Connection Results</h2>
+            <div id="results"></div>
+        </div>
+
+        <div class="info-card">
+            <h3>ℹ️ How to use this demo:</h3>
+
+            <h4 style="margin-top: 15px;">Option A - Initialize New Customer:</h4>
+            <ol>
+                <li><strong>Click "Initialize New Customer"</strong> - Calls backend to create a customer</li>
+                <li>Wait for customer ID and access token to be generated</li>
+                <li>Scroll to Step 2 and click "Connect with Lean"</li>
+            </ol>
+
+            <h4 style="margin-top: 15px;">Option B - Get Tokens for Existing Customer:</h4>
+            <ol>
+                <li><strong>Enter your Customer ID</strong> from a previous session</li>
+                <li>Click "Get Tokens" to fetch fresh access tokens (2 API calls)</li>
+                <li>Scroll to Step 2 and click "Connect with Lean"</li>
+            </ol>
+
+            <div class="token-help">
+                <h4>🔑 Complete Lean Integration Flow:</h4>
+                <p><strong>Backend API Flow (Step 1):</strong></p>
+                <ol>
+                    <li>Get API Access Token (scope: "api")</li>
+                    <li>Create Customer in Lean system</li>
+                    <li>Get Customer Access Token (scope: "customer.{id}")</li>
+                </ol>
+
+                <p style="margin-top: 15px;"><strong>Frontend SDK Flow (Step 2):</strong></p>
+                <ol>
+                    <li>Initialize Lean SDK (App Token is hardcoded)</li>
+                    <li>Call connect() with Customer Access Token</li>
+                    <li>User completes bank authentication</li>
+                </ol>
+
+                <h4 style="margin-top: 15px;">📝 Configuration:</h4>
+                <p><strong>Backend Server:</strong> Handles all API calls to Lean (running on port 8000)</p>
+                <p><strong>Customer Access Token:</strong> Auto-generated in Step 1 via backend API</p>
+                <p class="help-note">ℹ️ All credentials are configured in server.js</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with <a href="https://docs.leantech.me/v2.0-KSA/docs/web" target="_blank">Lean Web SDK</a></p>
+        </footer>
+    </div>
+
+    <script src="app.js?v=1759821900"></script>
+</body>
+</html>

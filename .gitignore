@@ -1,0 +1,36 @@
+# Environment Variables (CONTAINS SENSITIVE CREDENTIALS)
+.env
+
+# Documentation files (internal use only, not for public GitHub)
+CLAUDE.md
+SECURITY.md
+CHANGES.md
+GITHUB_PUBLISH_SUMMARY.md
+
+# Node modules
+node_modules/
+
+# Connection data (may contain sensitive customer/entity IDs)
+connections/*.json
+!connections/.gitkeep
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+.cache/

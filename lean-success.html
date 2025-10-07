@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 Connection Successful!</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .success-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #48bb78;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+        }
+
+        .checkmark svg {
+            width: 50px;
+            height: 50px;
+            stroke: white;
+            stroke-width: 3;
+            fill: none;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin: 0 0 10px 0;
+            color: #48bb78;
+        }
+
+        .subtitle {
+            color: #4a5568;
+            font-size: 1.1em;
+            margin-bottom: 25px;
+        }
+
+        .countdown-box {
+            background: #fef5e7;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .countdown-text {
+            color: #7d6608;
+            font-weight: 600;
+            font-size: 1em;
+            margin: 0 0 10px 0;
+        }
+
+        #countdown {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #f39c12;
+            margin: 0;
+        }
+
+        .details-box {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            text-align: left;
+        }
+
+        .details-box h3 {
+            margin-top: 0;
+            color: #2d3748;
+            font-size: 1.2em;
+        }
+
+        .detail-item {
+            margin: 12px 0;
+        }
+
+        .detail-label {
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 0.85em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #48bb78;
+            word-break: break-all;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-card">
+            <div class="checkmark">
+                <svg viewBox="0 0 52 52">
+                    <path d="M14 27l7.5 7.5L38 18"/>
+                </svg>
+            </div>
+
+            <h1>✅ Connection Successful!</h1>
+            <p class="subtitle">Your bank account has been connected to Lean</p>
+
+            <div class="countdown-box">
+                <p class="countdown-text">Saving data and redirecting in</p>
+                <div id="countdown">3</div>
+            </div>
+
+            <div class="details-box">
+                <h3>📋 Connection Details</h3>
+                <div id="detailsContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Extract URL parameters
+        var params = new URLSearchParams(window.location.search);
+        var data = {
+            entity_id: params.get('entity_id'),
+            customer_id: params.get('customer_id'),
+            bank_identifier: params.get('bank_identifier'),
+            consent_attempt_id: params.get('consent_attempt_id')
+        };
+
+        console.log('✅ Connection Data:', data);
+
+        // Display details
+        var detailsHTML = '';
+        if (data.entity_id) {
+            detailsHTML += '<div class="detail-item"><span class="detail-label">🔑 Entity ID</span><div class="detail-value">' + data.entity_id + '</div></div>';
+        }
+        if (data.customer_id) {
+            detailsHTML += '<div class="detail-item"><span class="detail-label">👤 Customer ID</span><div class="detail-value">' + data.customer_id + '</div></div>';
+        }
+        if (data.bank_identifier) {
+            detailsHTML += '<div class="detail-item"><span class="detail-label">🏦 Bank Identifier</span><div class="detail-value">' + data.bank_identifier + '</div></div>';
+        }
+        if (data.consent_attempt_id) {
+            detailsHTML += '<div class="detail-item"><span class="detail-label">📝 Consent ID</span><div class="detail-value">' + data.consent_attempt_id + '</div></div>';
+        }
+        document.getElementById('detailsContent').innerHTML = detailsHTML;
+
+        // Save to localStorage
+        var timestamp = new Date().toISOString();
+        var savedConnection = {
+            entity_id: data.entity_id,
+            customer_id: data.customer_id,
+            bank_identifier: data.bank_identifier,
+            consent_attempt_id: data.consent_attempt_id,
+            timestamp: timestamp,
+            success: true
+        };
+        localStorage.setItem('lean_last_connection', JSON.stringify(savedConnection));
+
+        var allConnections = JSON.parse(localStorage.getItem('lean_all_connections') || '[]');
+        allConnections.push(savedConnection);
+        localStorage.setItem('lean_all_connections', JSON.stringify(allConnections));
+        console.log('💾 Saved to localStorage');
+
+        // Save to server
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'http://localhost:8000/api/save-connection');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                console.log('✅ Saved to server:', JSON.parse(xhr.responseText));
+            }
+        };
+        xhr.send(JSON.stringify(data));
+
+        // Countdown and redirect
+        var sec = 3;
+        var interval = setInterval(function() {
+            sec--;
+            document.getElementById('countdown').textContent = sec;
+            if (sec <= 0) {
+                clearInterval(interval);
+                window.location.href = 'http://localhost:8000?success=true';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

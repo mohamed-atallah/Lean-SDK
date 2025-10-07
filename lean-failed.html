@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❌ Connection Failed</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .error-icon {
+            font-size: 120px;
+            animation: errorShake 0.6s ease-out;
+        }
+        @keyframes errorShake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-10px);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translateX(10px);
+            }
+        }
+        .reason-item {
+            padding: 12px 20px;
+            margin: 10px auto;
+            background: linear-gradient(135deg, #fff5f5, #fed7d7);
+            border-left: 4px solid #fc8181;
+            border-radius: 10px;
+            max-width: 500px;
+            transition: all 0.3s ease;
+            animation: slideInLeft 0.5s ease-out backwards;
+        }
+        .reason-item:nth-child(1) { animation-delay: 0.1s; }
+        .reason-item:nth-child(2) { animation-delay: 0.2s; }
+        .reason-item:nth-child(3) { animation-delay: 0.3s; }
+        .reason-item:nth-child(4) { animation-delay: 0.4s; }
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .reason-item:hover {
+            transform: translateX(5px);
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            box-shadow: 0 4px 15px rgba(252, 129, 129, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="display: flex; align-items: center; min-height: 100vh;">
+        <div class="card" style="text-align: center; padding: 60px; width: 100%;">
+            <div class="error-icon">❌</div>
+            <h1 style="font-size: 2.5em; margin: 20px 0; background: linear-gradient(135deg, #fc8181, #f56565); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Connection Failed
+            </h1>
+            <p style="font-size: 1.3em; margin: 20px 0; color: #4a5568;">
+                😔 The bank connection was not completed
+            </p>
+
+            <div style="margin: 30px 0;">
+                <p style="font-size: 1.1em; color: #718096; margin-bottom: 15px; font-weight: 600;">This could be due to:</p>
+                <div class="reason-item">
+                    🚫 <strong>User cancelled the connection</strong>
+                </div>
+                <div class="reason-item">
+                    🔐 <strong>Authentication failed or incorrect credentials</strong>
+                </div>
+                <div class="reason-item">
+                    🏦 <strong>Bank service temporarily unavailable</strong>
+                </div>
+                <div class="reason-item">
+                    ⏱️ <strong>Session timeout - please try again</strong>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #fff5f5, #fed7d7); padding: 20px; border-radius: 15px; margin: 30px 0;">
+                <p style="color: #c53030; font-weight: 600;">
+                    💡 <strong>What to do next?</strong><br><br>
+                    You can close this window and try connecting again,<br>
+                    or return to the main page to start over.
+                </p>
+            </div>
+
+            <button onclick="window.close()" class="connect-btn" style="margin-top: 30px; background: linear-gradient(135deg, #fc8181, #f56565);">
+                ✕ Close Window
+            </button>
+
+            <button onclick="window.location.href='/'" class="connect-btn" style="margin-top: 10px;">
+                🔄 Try Again
+            </button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting to Lean...</title>
+
+    <!-- Lean SDK Script -->
+    <script src="https://cdn.leantech.me/link/loader/prod/sa/latest/lean-link-loader.min.js"
+            onload="window.leanLinkLoaded = true; console.log('✅ Lean Link script loaded')"
+            onerror="window.leanLinkError = true; console.error('❌ Lean Link script failed to load')"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            margin: 30px auto;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status {
+            color: #666;
+            font-size: 1.1em;
+            margin: 20px 0;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .info {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Connecting to Lean</h1>
+        <div class="spinner"></div>
+        <p class="status" id="status">Initializing Lean SDK...</p>
+        <div id="error" style="display: none;"></div>
+        <div class="info">
+            <strong>Note:</strong> The Lean authentication popup will open automatically. Please complete the bank authentication process.
+        </div>
+    </div>
+
+    <script>
+        // Get credentials from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const customerId = urlParams.get('customer_id');
+        const accessToken = urlParams.get('access_token');
+        const accountType = urlParams.get('account_type') || 'personal';
+        const sandbox = urlParams.get('sandbox') === 'true';
+        let appToken = null;
+
+        const statusEl = document.getElementById('status');
+        const errorEl = document.getElementById('error');
+
+        function showError(message) {
+            errorEl.className = 'error';
+            errorEl.innerHTML = `
+                <strong>❌ Error</strong><br>
+                ${message}
+                <button class="close-btn" onclick="window.close()">Close Window</button>
+            `;
+            errorEl.style.display = 'block';
+            document.querySelector('.spinner').style.display = 'none';
+        }
+
+        async function fetchAppConfig() {
+            try {
+                const response = await fetch('http://localhost:8000/api/config');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch app configuration');
+                }
+                const config = await response.json();
+                appToken = config.client_id;
+            } catch (error) {
+                showError('Unable to load application configuration. Please ensure the server is running.');
+                throw error;
+            }
+        }
+
+        async function initLeanSDK() {
+            // Fetch app token first
+            await fetchAppConfig();
+            // Validate credentials
+            if (!customerId || !accessToken) {
+                showError('Missing credentials. Please ensure Customer ID and Access Token are provided.');
+                return;
+            }
+
+            // Check if Lean SDK is loaded
+            if (typeof window.Lean === 'undefined') {
+                showError('Lean SDK failed to load. Please check your internet connection and try again.');
+                return;
+            }
+
+            statusEl.textContent = 'Opening Lean authentication...';
+
+            try {
+                // Prepare connection config
+                const connectConfig = {
+                    app_token: appToken,
+                    permissions: [
+                        "identity",
+                        "accounts",
+                        "balance",
+                        "transactions",
+                        "identities",
+                        "scheduled_payments",
+                        "standing_orders",
+                        "direct_debits",
+                        "beneficiaries"
+                    ],
+                    customer_id: customerId,
+                    sandbox: sandbox,
+                    access_token: accessToken,
+                    fail_redirect_url: window.location.origin + '/lean-failed.html',
+                    success_redirect_url: window.location.origin + '/lean-success.html',
+                    account_type: accountType.toLowerCase()
+                };
+
+                console.log('🚀 Calling Lean.connect() with config:', connectConfig);
+
+                // Call Lean.connect()
+                window.Lean.connect(connectConfig);
+
+                statusEl.textContent = '✅ Lean SDK opened! Complete the authentication in the popup.';
+
+            } catch (error) {
+                console.error('❌ Error calling Lean.connect():', error);
+                showError(`Failed to connect: ${error.message}`);
+            }
+        }
+
+        // Wait for Lean SDK to load
+        if (window.leanLinkLoaded) {
+            initLeanSDK();
+        } else {
+            // Wait for SDK to load
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (window.leanLinkLoaded || typeof window.Lean !== 'undefined') {
+                    clearInterval(checkInterval);
+                    initLeanSDK();
+                } else if (attempts > 20) {
+                    clearInterval(checkInterval);
+                    showError('Lean SDK took too long to load. Please refresh and try again.');
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>
