@@ -14,6 +14,14 @@ node_modules/
 connections/*.json
 !connections/.gitkeep
 
+# Plaid connection data (may contain sensitive access tokens and account info)
+plaid-connections/*.json
+!plaid-connections/.gitkeep
+
+# Webhook event data (may contain sensitive item IDs and account info)
+webhooks/*.json
+!webhooks/.gitkeep
+
 # OS Files
 .DS_Store
 Thumbs.db

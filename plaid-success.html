@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Connection Successful</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .success-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .success-icon {
+            font-size: 120px;
+            animation: bounceIn 0.6s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .success-title {
+            font-size: 2.5em;
+            margin: 30px 0 20px 0;
+            background: linear-gradient(135deg, #00d4aa, #00a896);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .success-message {
+            font-size: 1.2em;
+            color: #4a5568;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .return-btn {
+            display: inline-block;
+            padding: 18px 40px;
+            background: linear-gradient(135deg, #00d4aa, #00a896);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 700;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);
+        }
+
+        .return-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 212, 170, 0.5);
+        }
+
+        .plaid-branding {
+            margin-top: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f4ff, #e8f5e9);
+            border-radius: 15px;
+        }
+
+        .checkmark-container {
+            display: inline-block;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4aa, #00a896);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+            box-shadow: 0 10px 40px rgba(0, 212, 170, 0.4);
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            stroke: white;
+            stroke-width: 4;
+            stroke-dasharray: 200;
+            stroke-dashoffset: 200;
+            animation: drawCheck 0.8s ease-out 0.3s forwards;
+        }
+
+        @keyframes drawCheck {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card success-container">
+            <div class="checkmark-container">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <path fill="none" d="M14 27l7 7 16-16"/>
+                </svg>
+            </div>
+
+            <h1 class="success-title">Connection Successful!</h1>
+
+            <p class="success-message">
+                Your bank account has been successfully connected via Plaid.<br>
+                You can now access your account information, balances, and transactions.
+            </p>
+
+            <a href="/" class="return-btn">
+                🏠 Return to Dashboard
+            </a>
+
+            <div class="plaid-branding">
+                <p style="margin: 0; color: #666; font-size: 0.9em;">
+                    🔒 Secured by <strong style="color: #00d4aa;">Plaid</strong>
+                </p>
+                <p style="margin: 10px 0 0 0; color: #888; font-size: 0.85em;">
+                    Your credentials are encrypted and secure
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with <a href="https://plaid.com/docs/" target="_blank">Plaid API</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Redirect back to main page after 5 seconds
+        setTimeout(() => {
+            window.location.href = '/?plaid_success=true';
+        }, 3000);
+
+        // Show countdown
+        let countdown = 3;
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -23,7 +23,9 @@
       "Bash(git check-ignore:*)",
       "Bash(git rm:*)",
       "Bash(bash:*)",
-      "Bash(echo \"EXIT_CODE: $?\")"
+      "Bash(echo \"EXIT_CODE: $?\")",
+      "WebFetch(domain:plaid.com)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

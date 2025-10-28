@@ -268,7 +268,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             debugLog('✅ Calling Lean.connect()...');
 
+            // Get selected bank (if any)
+            const leanBankSelect = document.getElementById('leanBankSelect');
+            const selectedBank = leanBankSelect ? leanBankSelect.value : '';
+
             // Prepare connection config - exactly as per Lean docs
+            // NOTE: Lean.connect() opens as a full-screen iframe takeover
+            // This is by design from Lean SDK and provides an immersive experience
+            // Different from Plaid SDK which opens as a centered modal dialog
             const connectConfig = {
                 app_token: appToken,
                 permissions: [
@@ -290,6 +297,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 account_type: accountType
             };
 
+            // Add bank_identifier if a bank is pre-selected
+            if (selectedBank) {
+                connectConfig.bank_identifier = selectedBank;
+                debugLog('🏦 Bank pre-selected:', selectedBank);
+            }
+
             debugLog('📋 Lean.connect() config:', connectConfig);
 
             // Call Lean.connect() directly
@@ -300,13 +313,16 @@ document.addEventListener('DOMContentLoaded', function() {
             resultsDiv.innerHTML = `
                 <div class="status-badge status-success">✅ Lean SDK Opened</div>
                 <div class="response-item">
-                    <strong>Status:</strong> Lean SDK window opened
+                    <strong>Status:</strong> Lean SDK window opened (full-screen takeover)
                 </div>
                 <div class="response-item">
                     <strong>Customer ID:</strong> ${currentCustomerId}
                 </div>
                 <div class="response-item">
                     <strong>Account Type:</strong> ${accountType}
+                </div>
+                <div class="response-item" style="background: #f0e7ff; padding: 10px; border-radius: 8px; border-left: 3px solid #667eea; margin-top: 10px;">
+                    <strong>ℹ️ UI Note:</strong> Lean opens as a full-screen iframe takeover (not a centered modal like Plaid). This provides an immersive experience typical of Middle Eastern banking integrations.
                 </div>
                 <div class="help-box">
                     <h4>✅ Next Steps:</h4>
@@ -492,10 +508,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    /**
+     * Load Available Lean Banks
+     */
+    async function loadLeanBanks() {
+        const loadBtn = document.getElementById('loadLeanBanksBtn');
+        const bankSelect = document.getElementById('leanBankSelect');
+
+        if (!loadBtn || !bankSelect) return;
+
+        loadBtn.disabled = true;
+        loadBtn.textContent = '⏳ Loading Banks...';
+
+        try {
+            debugLog('🏦 Fetching available Lean banks...');
+
+            const response = await fetch('http://localhost:8000/api/lean/banks');
+            if (!response.ok) {
+                throw new Error('Failed to fetch Lean banks');
+            }
+
+            const data = await response.json();
+            const banks = data.entities || [];
+
+            debugLog('✅ Lean banks loaded:', banks.length);
+
+            // Clear existing options (except the default one)
+            bankSelect.innerHTML = '<option value="">Let user choose from all banks</option>';
+
+            // Add banks to dropdown
+            banks.forEach(bank => {
+                const option = document.createElement('option');
+                option.value = bank.id;
+                option.textContent = `${bank.display_name || bank.name} (${bank.id})`;
+                bankSelect.appendChild(option);
+            });
+
+            loadBtn.textContent = `✅ Loaded ${banks.length} Banks`;
+
+            setTimeout(() => {
+                loadBtn.textContent = '🏦 Load Available Banks';
+                loadBtn.disabled = false;
+            }, 2000);
+
+        } catch (error) {
+            console.error('❌ Failed to load Lean banks:', error);
+            debugLog('❌ Error loading banks:', error);
+            alert('Failed to load banks: ' + error.message);
+            loadBtn.textContent = '❌ Load Failed';
+            setTimeout(() => {
+                loadBtn.textContent = '🏦 Load Available Banks';
+                loadBtn.disabled = false;
+            }, 2000);
+        }
+    }
+
     // Attach event listeners
     initBtn.addEventListener('click', initializeCustomer);
     connectBtn.addEventListener('click', connectToBank);
     getTokensBtn.addEventListener('click', getTokensForExistingCustomer);
+
+    const loadLeanBanksBtn = document.getElementById('loadLeanBanksBtn');
+    if (loadLeanBanksBtn) {
+        loadLeanBanksBtn.addEventListener('click', loadLeanBanks);
+    }
 
     // Initialize on page load
     console.log('='.repeat(50));

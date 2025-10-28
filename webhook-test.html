@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Webhook Testing - Lean SDK Integration</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .webhook-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #2563eb;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .section h3 {
+            color: #1e40af;
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .error-box {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .webhook-list {
+            margin-top: 20px;
+        }
+
+        .webhook-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .webhook-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .webhook-type {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .webhook-time {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .webhook-code {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .webhook-details {
+            font-family: monospace;
+            font-size: 12px;
+            background: #1f2937;
+            color: #10b981;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .connection-select {
+            margin-bottom: 20px;
+        }
+
+        .connection-item {
+            background: #f3f4f6;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .connection-item:hover {
+            background: #e5e7eb;
+        }
+
+        .connection-item.selected {
+            background: #dbeafe;
+            border: 2px solid #3b82f6;
+        }
+
+        .connection-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .connection-token {
+            font-size: 12px;
+            color: #6b7280;
+            font-family: monospace;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .webhook-codes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .webhook-code-option {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .webhook-code-option:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .webhook-code-option.selected {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="webhook-container">
+        <a href="index.html" class="back-link">← Back to Main App</a>
+
+        <h1 style="text-align: center; color: #1f2937; margin-bottom: 10px;">🔔 Plaid Webhook Testing</h1>
+        <p style="text-align: center; color: #6b7280; margin-bottom: 40px;">
+            Test and monitor webhook events in sandbox mode
+        </p>
+
+        <!-- Setup Instructions -->
+        <div class="section">
+            <h2>📋 Setup Instructions</h2>
+
+            <div class="info-box">
+                <strong>🎯 Purpose:</strong> This tool helps you test Plaid webhooks by simulating events and monitoring incoming webhook calls.
+            </div>
+
+            <h3>Step 1: Configure Webhook URL in Plaid Dashboard</h3>
+            <p>Go to your <a href="https://dashboard.plaid.com/team/webhooks" target="_blank">Plaid Dashboard → Team Settings → Webhooks</a> and set:</p>
+            <div class="info-box">
+                <strong>Webhook URL:</strong> <code id="webhookUrl">http://localhost:8000/api/plaid/webhook</code>
+                <button onclick="copyWebhookUrl()" style="margin-left: 10px; padding: 5px 10px; cursor: pointer;">Copy</button>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Local Testing Limitation:</strong> Plaid cannot send webhooks to <code>localhost</code> directly.
+                You have two options:
+                <ul style="margin-top: 10px; margin-bottom: 0;">
+                    <li><strong>Option 1 (Recommended):</strong> Use <a href="https://ngrok.com/" target="_blank">ngrok</a> to create a public URL that tunnels to localhost:8000</li>
+                    <li><strong>Option 2:</strong> Use the sandbox trigger endpoints below to manually fire webhooks (no real webhook delivery)</li>
+                </ul>
+            </div>
+
+            <h3>Step 2: Using ngrok (Recommended for Real Webhooks)</h3>
+            <div class="info-box">
+                <ol style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Install ngrok: <code>brew install ngrok</code> or download from <a href="https://ngrok.com/download" target="_blank">ngrok.com</a></li>
+                    <li>Run: <code>ngrok http 8000</code></li>
+                    <li>Copy the HTTPS forwarding URL (e.g., <code>https://abc123.ngrok.io</code>)</li>
+                    <li>Set webhook URL in Plaid Dashboard to: <code>https://your-ngrok-url.ngrok.io/api/plaid/webhook</code></li>
+                    <li>Now Plaid can send real webhooks to your local server!</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Select Connection -->
+        <div class="section">
+            <h2>🔗 Step 1: Select a Plaid Connection</h2>
+            <p>Choose a connected Plaid account to test webhooks with:</p>
+
+            <div id="connectionsList">
+                <div class="info-box">Loading connections...</div>
+            </div>
+
+            <div id="selectedConnection" style="display: none;">
+                <div class="success-box">
+                    <strong>Selected:</strong> <span id="selectedName"></span><br>
+                    <strong>Item ID:</strong> <code id="selectedItemId"></code><br>
+                    <strong>Access Token:</strong> <code id="selectedToken" style="font-size: 10px;"></code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trigger Webhooks -->
+        <div class="section">
+            <h2>🚀 Step 2: Trigger Webhook Events (Sandbox)</h2>
+
+            <h3>Method 1: Fire Specific Webhook Code</h3>
+            <p>Select a webhook code to trigger:</p>
+
+            <div class="webhook-codes">
+                <div class="webhook-code-option" onclick="selectWebhookCode('DEFAULT_UPDATE')">
+                    <strong>DEFAULT_UPDATE</strong>
+                    <p style="font-size: 12px; color: #6b7280; margin: 5px 0 0 0;">New data available</p>
+                </div>
+                <div class="webhook-code-option" onclick="selectWebhookCode('INITIAL_UPDATE')">
+                    <strong>INITIAL_UPDATE</strong>
+                    <p style="font-size: 12px; color: #6b7280; margin: 5px 0 0 0;">First data ready</p>
+                </div>
+                <div class="webhook-code-option" onclick="selectWebhookCode('HISTORICAL_UPDATE')">
+                    <strong>HISTORICAL_UPDATE</strong>
+                    <p style="font-size: 12px; color: #6b7280; margin: 5px 0 0 0;">Historical data ready</p>
+                </div>
+                <div class="webhook-code-option" onclick="selectWebhookCode('SYNC_UPDATES_AVAILABLE')">
+                    <strong>SYNC_UPDATES_AVAILABLE</strong>
+                    <p style="font-size: 12px; color: #6b7280; margin: 5px 0 0 0;">New transactions sync</p>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="customWebhookCode">Or enter custom webhook code:</label>
+                <input type="text" id="customWebhookCode" placeholder="e.g., DEFAULT_UPDATE, INITIAL_UPDATE, etc.">
+            </div>
+
+            <button class="btn btn-primary" onclick="fireWebhook()">🔔 Fire Webhook</button>
+
+            <div class="info-box" style="margin-top: 20px;">
+                <strong>Note:</strong> This simulates a webhook but doesn't actually deliver it to your endpoint.
+                It's useful for testing your application's response to specific webhook types.
+            </div>
+
+            <h3 style="margin-top: 30px;">Method 2: Reset Item Login</h3>
+            <p>Force the item to require re-authentication (triggers <code>ITEM_LOGIN_REQUIRED</code> webhook):</p>
+
+            <button class="btn btn-danger" onclick="resetLogin()">🔄 Reset Item Login</button>
+
+            <div class="warning-box" style="margin-top: 20px;">
+                <strong>⚠️ Warning:</strong> This will force the item into an error state requiring user re-authentication.
+            </div>
+
+            <div id="triggerResult" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- View Received Webhooks -->
+        <div class="section">
+            <h2>📥 Step 3: View Received Webhooks</h2>
+            <p>Monitor webhooks received by your server:</p>
+
+            <button class="btn btn-secondary" onclick="loadWebhooks()">🔄 Refresh Webhooks</button>
+
+            <div id="webhooksList" class="webhook-list">
+                <div class="info-box">Click "Refresh Webhooks" to load received webhooks...</div>
+            </div>
+        </div>
+
+        <!-- Documentation -->
+        <div class="section">
+            <h2>📚 Webhook Documentation</h2>
+
+            <h3>Common Webhook Types</h3>
+            <ul>
+                <li><code>TRANSACTIONS</code> - Transaction updates (DEFAULT_UPDATE, INITIAL_UPDATE, etc.)</li>
+                <li><code>ITEM</code> - Item status changes (ITEM_LOGIN_REQUIRED, ERROR, etc.)</li>
+                <li><code>AUTH</code> - Auth data updates</li>
+                <li><code>ASSETS</code> - Asset report updates</li>
+            </ul>
+
+            <h3>Useful Resources</h3>
+            <ul>
+                <li><a href="https://plaid.com/docs/api/webhooks/" target="_blank">Plaid Webhooks Documentation</a></li>
+                <li><a href="https://plaid.com/docs/api/sandbox/#sandboxitemfire_webhook" target="_blank">Sandbox Webhook Testing</a></li>
+                <li><a href="https://dashboard.plaid.com/team/webhooks" target="_blank">Plaid Dashboard - Webhooks</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let selectedAccessToken = null;
+        let selectedItemId = null;
+        let selectedWebhookCodeValue = 'DEFAULT_UPDATE';
+
+        // Load connections on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConnections();
+        });
+
+        async function loadConnections() {
+            try {
+                const response = await fetch('/api/plaid/list-connections');
+                const data = await response.json();
+
+                if (data.connections && data.connections.length > 0) {
+                    const html = data.connections.map((conn, index) => `
+                        <div class="connection-item" onclick="selectConnection('${conn.access_token}', '${conn.item_id}', '${conn.institution_name}', ${index})">
+                            <div class="connection-name">${conn.institution_name || 'Unknown Institution'}</div>
+                            <div class="connection-token">Item: ${conn.item_id}</div>
+                            <div class="connection-token" style="font-size: 10px;">Connected: ${new Date(conn.timestamp).toLocaleString()}</div>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('connectionsList').innerHTML = html;
+                } else {
+                    document.getElementById('connectionsList').innerHTML = `
+                        <div class="warning-box">
+                            <strong>No connections found!</strong><br>
+                            Please connect a bank account first using the <a href="index.html">main app</a>.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to load connections:', error);
+                document.getElementById('connectionsList').innerHTML = `
+                    <div class="error-box">
+                        <strong>Error loading connections:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function selectConnection(accessToken, itemId, name, index) {
+            selectedAccessToken = accessToken;
+            selectedItemId = itemId;
+
+            // Update UI
+            document.querySelectorAll('.connection-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelectorAll('.connection-item')[index].classList.add('selected');
+
+            document.getElementById('selectedConnection').style.display = 'block';
+            document.getElementById('selectedName').textContent = name;
+            document.getElementById('selectedItemId').textContent = itemId;
+            document.getElementById('selectedToken').textContent = accessToken.substring(0, 50) + '...';
+        }
+
+        function selectWebhookCode(code) {
+            selectedWebhookCodeValue = code;
+            document.getElementById('customWebhookCode').value = code;
+
+            // Update UI
+            document.querySelectorAll('.webhook-code-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.target.closest('.webhook-code-option').classList.add('selected');
+        }
+
+        async function fireWebhook() {
+            if (!selectedAccessToken) {
+                alert('Please select a connection first!');
+                return;
+            }
+
+            const webhookCode = document.getElementById('customWebhookCode').value || selectedWebhookCodeValue;
+
+            if (!webhookCode) {
+                alert('Please select or enter a webhook code!');
+                return;
+            }
+
+            const resultDiv = document.getElementById('triggerResult');
+            resultDiv.innerHTML = '<div class="info-box">Firing webhook...</div>';
+
+            try {
+                const response = await fetch('/api/plaid/fire-webhook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        access_token: selectedAccessToken,
+                        webhook_code: webhookCode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success-box">
+                            <strong>✅ Webhook Fired Successfully!</strong><br>
+                            <strong>Code:</strong> ${webhookCode}<br>
+                            <strong>Item ID:</strong> ${selectedItemId}<br>
+                            <div style="margin-top: 10px; font-size: 12px;">
+                                <strong>Note:</strong> In sandbox mode, this simulates the webhook but doesn't actually deliver it.
+                                Check your server logs for webhook processing.
+                            </div>
+                        </div>
+                    `;
+
+                    // Auto-refresh webhooks after 2 seconds
+                    setTimeout(() => loadWebhooks(), 2000);
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error-box">
+                            <strong>❌ Failed to fire webhook:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error-box">
+                        <strong>❌ Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function resetLogin() {
+            if (!selectedAccessToken) {
+                alert('Please select a connection first!');
+                return;
+            }
+
+            if (!confirm('This will force the item to require re-authentication. Continue?')) {
+                return;
+            }
+
+            const resultDiv = document.getElementById('triggerResult');
+            resultDiv.innerHTML = '<div class="info-box">Resetting item login...</div>';
+
+            try {
+                const response = await fetch('/api/plaid/reset-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        access_token: selectedAccessToken
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success-box">
+                            <strong>✅ Item Login Reset!</strong><br>
+                            <strong>Item ID:</strong> ${selectedItemId}<br>
+                            <div style="margin-top: 10px;">
+                                An <code>ITEM_LOGIN_REQUIRED</code> webhook will be fired.<br>
+                                The item now requires user re-authentication.
+                            </div>
+                        </div>
+                    `;
+
+                    // Auto-refresh webhooks after 2 seconds
+                    setTimeout(() => loadWebhooks(), 2000);
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error-box">
+                            <strong>❌ Failed to reset login:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error-box">
+                        <strong>❌ Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function loadWebhooks() {
+            const webhooksList = document.getElementById('webhooksList');
+            webhooksList.innerHTML = '<div class="info-box">Loading webhooks...</div>';
+
+            try {
+                const response = await fetch('/api/plaid/webhooks');
+                const data = await response.json();
+
+                if (data.webhooks && data.webhooks.length > 0) {
+                    const html = data.webhooks.reverse().map(webhook => `
+                        <div class="webhook-item">
+                            <div class="webhook-header">
+                                <div>
+                                    <span class="webhook-type">${webhook.webhook_type || 'UNKNOWN'}</span>
+                                    <span class="webhook-code">${webhook.webhook_code || 'UNKNOWN'}</span>
+                                </div>
+                                <div class="webhook-time">${new Date(webhook.received_at).toLocaleString()}</div>
+                            </div>
+                            <div><strong>Item ID:</strong> ${webhook.item_id || 'N/A'}</div>
+                            ${webhook.error ? `<div style="color: #ef4444;"><strong>Error:</strong> ${webhook.error.error_message}</div>` : ''}
+                            <details style="margin-top: 10px;">
+                                <summary style="cursor: pointer; font-weight: 600;">View Full Payload</summary>
+                                <div class="webhook-details">${JSON.stringify(webhook, null, 2)}</div>
+                            </details>
+                        </div>
+                    `).join('');
+
+                    webhooksList.innerHTML = `
+                        <div class="success-box">
+                            <strong>📊 Total Webhooks Received:</strong> ${data.count}
+                        </div>
+                        ${html}
+                    `;
+                } else {
+                    webhooksList.innerHTML = `
+                        <div class="info-box">
+                            <strong>No webhooks received yet.</strong><br>
+                            Trigger a webhook above or wait for Plaid to send webhooks to your configured endpoint.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                webhooksList.innerHTML = `
+                    <div class="error-box">
+                        <strong>❌ Error loading webhooks:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function copyWebhookUrl() {
+            const url = document.getElementById('webhookUrl').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Webhook URL copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

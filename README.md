@@ -1,17 +1,67 @@
-# 🏦 Lean SDK Integration - Complete Implementation
+# 🏦 Lean & Plaid SDK Integration - Dual Banking Platform
 
-A modern web application demonstrating **complete integration** of the Lean Web SDK for connecting to financial institutions in Saudi Arabia. This project includes a backend server, beautiful UI, and proper implementation following Lean's official documentation.
+A modern web application demonstrating **complete integration** of both **Lean SDK** (Saudi Arabia) and **Plaid SDK** (US) for connecting to financial institutions globally. This project includes a backend server, beautiful tabbed UI, and proper implementation following official documentation from both providers.
 
 ## ✨ Features
 
+### Lean SDK (Saudi Arabia)
 - ✅ **Complete Backend API Integration** - Real Lean API calls via Node.js server
 - ✅ **Three-Step Authentication Flow** - API Token → Create Customer → Customer Token
-- ✅ **Modern, Animated UI** - Colorful gradients, smooth animations, and friendly design
+- ✅ **Full-Screen UI Experience** - Immersive full-screen iframe takeover
 - ✅ **Sandbox Mode** - Safe testing without real bank connections
+
+### Plaid SDK (US)
+- ✅ **Link Token Integration** - Standard Plaid Link flow
+- ✅ **Token Exchange** - Public token → Access token conversion
+- ✅ **Modal Dialog Experience** - Centered modal overlay (standard US UX)
+- ✅ **Account Data Fetching** - Accounts, balances, and transactions
+- ✅ **Payment Initiation Support** - View available banks and recipients
+
+### Common Features
+- ✅ **Modern, Animated UI** - Colorful gradients, smooth animations, tabbed interface
 - ✅ **Real-time Results Display** - Shows all API responses and connection status
 - ✅ **Comprehensive Error Handling** - Helpful error messages and troubleshooting
 - ✅ **Debug Mode** - Detailed console logging for development
 - ✅ **Success/Failure Pages** - Beautiful redirect pages with animations
+- ✅ **Connection Management** - View, load, and disconnect saved connections
+
+## 🔄 SDK User Interface Comparison
+
+### Lean SDK - Full-Screen Webview
+**Visual Appearance:**
+- Opens as a **full-screen iframe overlay** covering the entire browser window
+- Creates an immersive, app-like experience typical of mobile-first regions
+- User sees complete screen takeover during authentication
+
+**Implementation:**
+```javascript
+window.Lean.connect(config);  // Opens immediately as full-screen
+```
+
+**Regional Context:**
+- Common in Middle Eastern/Saudi banking applications
+- Matches mobile app experience patterns
+- Designed for touch-first interactions
+
+### Plaid SDK - Centered Modal Dialog
+**Visual Appearance:**
+- Opens as a **centered modal dialog** (not full-screen)
+- Appears as a floating window in the center with dimmed background
+- More traditional desktop-focused web modal experience
+
+**Implementation:**
+```javascript
+const handler = Plaid.create(config);
+handler.open();  // Opens as centered modal
+```
+
+**Regional Context:**
+- Standard for US/Western banking integrations
+- Familiar to desktop and web users
+- Matches traditional financial service UX patterns
+
+### Important Note
+⚠️ **These UI differences are by design from each SDK provider and cannot be customized.** Both SDKs provide secure iframe-based authentication, but with different visual presentations matching their respective regional UX patterns.
 
 ## 🎯 How It Works
 

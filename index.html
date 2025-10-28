@@ -3,24 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lean SDK Test Integration</title>
+    <title>Lean & Plaid SDK Integration</title>
 
     <!-- Content Security Policy for images and styles -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.leantech.me https://*.leantech.me; script-src 'self' 'unsafe-inline' https://cdn.leantech.me; style-src 'self' 'unsafe-inline' https://cdn.leantech.me; img-src 'self' https: data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.leantech.me https://*.leantech.me https://cdn.plaid.com https://*.plaid.com; script-src 'self' 'unsafe-inline' https://cdn.leantech.me https://cdn.plaid.com; style-src 'self' 'unsafe-inline' https://cdn.leantech.me; img-src 'self' https: data: blob:;">
 
     <!-- Lean SDK Script - Load at page initialization -->
     <script src="https://cdn.leantech.me/link/loader/prod/sa/latest/lean-link-loader.min.js"
             onload="window.leanLinkLoaded = true; console.log('✅ Lean Link script loaded')"
             onerror="window.leanLinkError = true; console.error('❌ Lean Link script failed to load')"></script>
 
+    <!-- Plaid Link Script -->
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+
     <link rel="stylesheet" href="styles.css">
+
+    <style>
+        .tab-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+            color: #4a5568;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-btn.plaid-tab.active {
+            background: linear-gradient(135deg, #00d4aa, #00a896);
+            box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔗 Lean SDK Test Integration</h1>
-            <p class="subtitle">Test the Lean Web SDK connection in Sandbox mode</p>
+            <h1>🏦 Banking SDK Integration</h1>
+            <p class="subtitle">Test Lean (Saudi Arabia) and Plaid (US) integrations</p>
         </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('lean')">
+                🔗 Lean SDK (Saudi Arabia)
+            </button>
+            <button class="tab-btn plaid-tab" onclick="switchTab('plaid')">
+                🔵 Plaid SDK (US)
+            </button>
+        </div>
 
         <!-- Success Message Banner -->
         <div id="successBanner" style="display: none; background: linear-gradient(135deg, #d4edda, #c3e6cb); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid #28a745; animation: slideDown 0.5s ease-out;">
@@ -47,6 +109,8 @@
             }
         </style>
 
+        <!-- LEAN TAB CONTENT -->
+        <div id="lean-tab" class="tab-content active">
         <div class="card">
             <h2>Step 1: Get Customer Credentials</h2>
             <p>Choose one of the following options:</p>
@@ -132,6 +196,19 @@
                     <option value="PERSONAL">Personal</option>
                     <option value="BUSINESS">Business</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="leanBankSelect">Pre-select Bank (Optional)</label>
+                <select id="leanBankSelect" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;">
+                    <option value="">Let user choose from all banks</option>
+                </select>
+                <small style="color: #718096; display: block; margin-top: 5px;">
+                    💡 Pre-selecting a bank skips the bank selection screen and goes directly to login
+                </small>
+                <button id="loadLeanBanksBtn" style="margin-top: 10px; padding: 8px 15px; font-size: 0.9em; background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                    🏦 Load Available Banks
+                </button>
             </div>
 
             <div class="form-group">
@@ -250,11 +327,358 @@
             </div>
         </div>
 
+        </div>
+        <!-- END LEAN TAB CONTENT -->
+
+        <!-- PLAID TAB CONTENT -->
+        <div id="plaid-tab" class="tab-content">
+            <!-- Plaid Success Banner -->
+            <div id="plaidSuccessBanner" style="display: none; background: linear-gradient(135deg, #d4edda, #c3e6cb); padding: 20px; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid #00d4aa; animation: slideDown 0.5s ease-out;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0 0 5px 0; color: #155724; font-size: 1.4em;">✅ Bank Connected via Plaid!</h3>
+                        <p style="margin: 0; color: #155724; font-size: 1em;">Your bank account has been successfully linked.</p>
+                    </div>
+                    <button onclick="document.getElementById('plaidSuccessBanner').style.display='none'" style="background: transparent; border: none; font-size: 24px; cursor: pointer; color: #155724; padding: 5px 10px;">×</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Step 1: View Available Banks</h2>
+                <p>Browse available banks and payment recipients in your Plaid account</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <button id="fetchInstitutionsBtn" class="connect-btn" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        🏦 Get Available Banks
+                    </button>
+                    <button id="fetchRecipientsBtn" class="connect-btn" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                        💳 Get Payment Recipients
+                    </button>
+                </div>
+
+                <div id="institutionsList" style="margin-top: 20px; display: none;">
+                    <h3>🏦 Available Banks</h3>
+                    <div class="form-group">
+                        <label for="countrySelect">Select Country</label>
+                        <select id="countrySelect" style="margin-bottom: 10px;">
+                            <option value="US" selected>United States (US)</option>
+                            <option value="GB">United Kingdom (GB)</option>
+                            <option value="DE">Germany (DE)</option>
+                            <option value="FR">France (FR)</option>
+                            <option value="ES">Spain (ES)</option>
+                            <option value="IT">Italy (IT)</option>
+                            <option value="NL">Netherlands (NL)</option>
+                            <option value="IE">Ireland (IE)</option>
+                        </select>
+                        <div style="background: #fff3cd; padding: 12px; border-radius: 8px; border-left: 4px solid #ffc107; margin-top: 10px;">
+                            <p style="margin: 0; color: #856404; font-size: 0.9em;">
+                                ⚠️ <strong>Sandbox Mode:</strong> Only US banks work with sandbox credentials.
+                                Non-US banks are for production use only. If you select a non-US institution and click "Initialize Plaid",
+                                the system will automatically retry with all available sandbox banks.
+                            </p>
+                        </div>
+                    </div>
+                    <div id="institutionsResults"></div>
+                </div>
+
+                <div id="recipientsList" style="margin-top: 20px; display: none;">
+                    <h3>💳 Payment Recipients</h3>
+                    <div id="recipientsResults"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Step 2: Connect Bank Account</h2>
+                <p>Choose how you want to initialize Plaid Link</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <!-- Option A: Auto-create Link Token -->
+                    <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; background: #f9f9f9;">
+                        <h3 style="margin-top: 0; font-size: 1.1em;">Option A: Auto-Create Link Token</h3>
+                        <p style="font-size: 0.9em;">Let the app create a link token for you</p>
+
+                        <div class="info-box" style="background: linear-gradient(135deg, #e0f7fa, #e0f2f1); border-left: 5px solid #00d4aa; padding: 10px; margin-bottom: 15px;">
+                            <strong>🔄 Flow:</strong>
+                            <ol style="margin: 10px 0 0 20px; font-size: 0.85em;">
+                                <li>Create Link Token</li>
+                                <li>Open Plaid Link</li>
+                                <li>Exchange Public Token</li>
+                            </ol>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="plaidUserId" style="font-size: 0.85em; font-weight: 600;">Your User ID (optional)</label>
+                            <input
+                                type="text"
+                                id="plaidUserId"
+                                placeholder="e.g., user_john_doe"
+                                style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.9em;"
+                            >
+                            <small style="color: #718096; display: block; margin-top: 5px; font-size: 0.8em;">
+                                💡 Leave empty for auto-generated ID
+                            </small>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="plaidInstitutionSelect" style="font-size: 0.85em; font-weight: 600;">Pre-select Bank (Optional)</label>
+                            <select id="plaidInstitutionSelect" style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.9em;">
+                                <option value="">Let user choose from all sandbox banks</option>
+                            </select>
+                            <small style="color: #718096; display: block; margin-top: 5px; font-size: 0.8em;">
+                                💡 Use "Fetch Available Banks" (Step 1) to populate with verified sandbox banks
+                            </small>
+                            <div style="background: #e6fffa; padding: 10px; border-radius: 8px; border-left: 3px solid #00d4aa; margin-top: 8px;">
+                                <p style="margin: 0; color: #00695c; font-size: 0.8em;">
+                                    ✅ <strong>Auto-Retry:</strong> If you select a non-sandbox institution, the app will automatically retry with all available banks.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button id="initPlaidBtn" class="connect-btn" style="width: 100%; background: linear-gradient(135deg, #00d4aa, #00a896); box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);">
+                            🚀 Initialize Plaid
+                        </button>
+                    </div>
+
+                    <!-- Option B: Use Existing Link Token -->
+                    <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; background: #f9f9f9;">
+                        <h3 style="margin-top: 0; font-size: 1.1em;">Option B: Use Existing Link Token</h3>
+                        <p style="font-size: 0.9em;">Already have a link token? Use it directly</p>
+
+                        <div class="info-box" style="background: #fff9e6; border-left: 5px solid #f6ad55; padding: 10px; margin-bottom: 15px;">
+                            <strong>⚡ Fast Flow:</strong>
+                            <ol style="margin: 10px 0 0 20px; font-size: 0.85em;">
+                                <li>Paste your link token</li>
+                                <li>Open Plaid Link immediately</li>
+                                <li>Exchange Public Token</li>
+                            </ol>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="manualLinkToken" style="font-size: 0.85em; font-weight: 600;">Link Token</label>
+                            <textarea
+                                id="manualLinkToken"
+                                placeholder="link-sandbox-..."
+                                style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.85em; font-family: monospace; min-height: 80px; resize: vertical;"
+                            ></textarea>
+                            <small style="color: #718096; display: block; margin-top: 5px; font-size: 0.8em;">
+                                🔑 Paste your pre-created link token here
+                            </small>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="manualUserId" style="font-size: 0.85em; font-weight: 600;">Client User ID</label>
+                            <input
+                                type="text"
+                                id="manualUserId"
+                                placeholder="user_123"
+                                style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.9em;"
+                            >
+                            <small style="color: #718096; display: block; margin-top: 5px; font-size: 0.8em;">
+                                👤 The user ID associated with this link token
+                            </small>
+                        </div>
+
+                        <button id="openPlaidWithTokenBtn" class="connect-btn" style="width: 100%; background: linear-gradient(135deg, #667eea, #764ba2); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);">
+                            🎯 Open with Link Token
+                        </button>
+                    </div>
+                </div>
+
+                <div class="info-box" style="background: linear-gradient(135deg, #e0f7fa, #e0f2f1); border-left: 5px solid #00d4aa;">
+                    <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #00695c;">
+                        <strong>Sandbox Credentials (Official Plaid Test Data):</strong><br>
+                        • Username/Password: <code>user_good</code> / <code>pass_good</code><br>
+                        • Test Phone: <code>4155550011</code> | OTP Code: <code>123456</code><br>
+                        • Or click "Continue as guest"
+                    </p>
+                </div>
+            </div>
+
+            <div class="card results-card" id="plaidResultsCard" style="display: none;">
+                <h2>Connection Results</h2>
+                <div id="plaidResults"></div>
+            </div>
+
+            <div class="card" id="plaidAccountsCard" style="display: none;">
+                <h2>Step 3: Fetch Account Data</h2>
+                <p>After successful connection, fetch your account details</p>
+
+                <button id="fetchPlaidAccountsBtn" class="connect-btn" style="background: linear-gradient(135deg, #00d4aa, #00a896); box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);" disabled>
+                    📊 Fetch Accounts
+                </button>
+
+                <div id="plaidAccountsList" style="margin-top: 20px;"></div>
+            </div>
+
+            <div class="card" id="plaidBalancesCard" style="display: none;">
+                <h2>💰 Fetch Account Balances (with Filters)</h2>
+                <p>Fetch real-time balances with optional account and date filtering</p>
+
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="margin-top: 0; color: #667eea;">Filter Options</h3>
+
+                    <!-- Account Filter -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                            🏦 Filter by Accounts (optional)
+                        </label>
+                        <div id="accountFilterCheckboxes" style="background: white; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                            <p style="color: #718096; font-size: 0.9em; margin: 0;">
+                                Fetch accounts first to enable account filtering
+                            </p>
+                        </div>
+                        <button id="selectAllAccountsBtn" class="connect-btn" style="padding: 8px 16px; font-size: 0.85em; margin-top: 10px; background: linear-gradient(135deg, #00d4aa, #00a896);" disabled>
+                            ✅ Select All
+                        </button>
+                        <button id="deselectAllAccountsBtn" class="connect-btn" style="padding: 8px 16px; font-size: 0.85em; margin-top: 10px; margin-left: 10px; background: linear-gradient(135deg, #ed8936, #dd6b20);" disabled>
+                            ❌ Deselect All
+                        </button>
+                    </div>
+
+                    <!-- Date Filter -->
+                    <div style="margin-bottom: 15px;">
+                        <label for="minLastUpdatedDatetime" style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                            📅 Minimum Last Updated Time (optional)
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="minLastUpdatedDatetime"
+                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;"
+                            placeholder="Leave empty for no date filter"
+                        />
+                        <p style="font-size: 0.85em; color: #718096; margin: 5px 0 0 0;">
+                            Only show accounts with balances updated after this time
+                        </p>
+                    </div>
+
+                    <div style="background: #e6fffa; padding: 12px; border-radius: 8px; border-left: 4px solid #00d4aa;">
+                        <p style="margin: 0; font-size: 0.9em; color: #00695c;">
+                            💡 <strong>Tip:</strong> Leave filters empty to fetch all account balances
+                        </p>
+                    </div>
+                </div>
+
+                <button id="fetchPlaidBalancesBtn" class="connect-btn" style="background: linear-gradient(135deg, #f093fb, #f5576c); box-shadow: 0 8px 25px rgba(240, 147, 251, 0.4);" disabled>
+                    💰 Fetch Balances with Filters
+                </button>
+
+                <div id="plaidBalancesList" style="margin-top: 20px;"></div>
+            </div>
+
+            <div class="card">
+                <h2>📋 All Saved Plaid Connections</h2>
+                <p>View all bank connections created via Plaid (stored locally)</p>
+
+                <button id="listPlaidConnectionsBtn" class="connect-btn" style="background: linear-gradient(135deg, #667eea, #764ba2); box-shadow: 0 8px 25px rgba(118, 75, 162, 0.4);">
+                    📋 View All Connections
+                </button>
+
+                <div id="allPlaidConnectionsList" style="margin-top: 20px;"></div>
+            </div>
+
+            <div class="card">
+                <h2>👥 All Plaid Users/Customers</h2>
+                <p>View all unique users who have connected bank accounts via Plaid</p>
+                <button id="listPlaidUsersBtn" class="connect-btn" style="background: linear-gradient(135deg, #667eea, #764ba2); box-shadow: 0 8px 25px rgba(118, 75, 162, 0.4);">
+                    👥 List All Users (Sorted by User ID)
+                </button>
+                <div id="allPlaidUsersList" style="margin-top: 20px;"></div>
+            </div>
+
+            <div class="card">
+                <h2>📚 Plaid API Reference</h2>
+                <p>View all Plaid APIs used in this application with parameters and examples</p>
+
+                <button id="showPlaidApiRefBtn" class="connect-btn" style="background: linear-gradient(135deg, #f093fb, #f5576c); box-shadow: 0 8px 25px rgba(240, 147, 251, 0.4);">
+                    📖 Show API Reference
+                </button>
+
+                <div id="plaidApiReference" style="margin-top: 20px; display: none;"></div>
+            </div>
+
+            <div class="info-card">
+                <h3>ℹ️ How to use Plaid integration:</h3>
+
+                <h4 style="margin-top: 15px;">Quick Start:</h4>
+                <ol>
+                    <li><strong>Click "Initialize Plaid"</strong> - Creates a link token and opens Plaid Link</li>
+                    <li><strong>Select Your Bank</strong> - Choose from the list (use "Plaid Sandbox" for testing)</li>
+                    <li><strong>Log In</strong> - Different banks use different auth methods in sandbox:
+                        <ul style="margin-top: 5px;">
+                            <li><strong>Username/Password:</strong> <code>user_good</code> / <code>pass_good</code></li>
+                            <li><strong>Phone Auth:</strong> Enter <code>4155550011</code>, then use OTP code <code>123456</code></li>
+                            <li><strong>Alternative:</strong> Click "Continue as guest" to skip phone verification</li>
+                            <li><strong>Tip:</strong> Search for "First Platypus Bank" for username/password flow</li>
+                        </ul>
+                    </li>
+                    <li><strong>Grant Permissions</strong> - Allow access to accounts, balances, and transactions</li>
+                    <li><strong>Fetch Data</strong> - Click "Fetch Accounts" to view your bank accounts</li>
+                </ol>
+
+                <div class="token-help">
+                    <h4>🔵 Plaid Integration Flow:</h4>
+                    <p><strong>Step 1: Link Token Creation</strong></p>
+                    <ol>
+                        <li>Backend creates link_token via <code>/link/token/create</code></li>
+                        <li>Link token is returned to frontend</li>
+                    </ol>
+
+                    <p style="margin-top: 15px;"><strong>Step 2: User Authentication</strong></p>
+                    <ol>
+                        <li>Plaid Link opens with link_token</li>
+                        <li>User selects bank and authenticates</li>
+                        <li>Plaid returns public_token</li>
+                    </ol>
+
+                    <p style="margin-top: 15px;"><strong>Step 3: Token Exchange</strong></p>
+                    <ol>
+                        <li>Backend exchanges public_token for access_token</li>
+                        <li>access_token used for all subsequent API calls</li>
+                        <li>Fetch accounts, balances, transactions</li>
+                    </ol>
+
+                    <h4 style="margin-top: 15px;">📝 Configuration:</h4>
+                    <p><strong>Backend Server:</strong> Handles all Plaid API calls (running on port 8000)</p>
+                    <p><strong>Environment:</strong> Sandbox (safe testing with test credentials)</p>
+                    <p class="help-note">ℹ️ Configure Plaid credentials in .env file</p>
+                </div>
+            </div>
+        </div>
+        <!-- END PLAID TAB CONTENT -->
+
         <footer>
-            <p>Built with <a href="https://docs.leantech.me/v2.0-KSA/docs/web" target="_blank">Lean Web SDK</a></p>
+            <p>Built with <a href="https://docs.leantech.me/v2.0-KSA/docs/web" target="_blank">Lean Web SDK</a> & <a href="https://plaid.com/docs/" target="_blank">Plaid API</a></p>
         </footer>
     </div>
 
-    <script src="app.js?v=1759821900"></script>
+    <script>
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+
+            // Show appropriate results card
+            if (tabName === 'plaid') {
+                document.getElementById('plaidResultsCard').style.display = 'block';
+                document.getElementById('plaidAccountsCard').style.display = 'block';
+            }
+        }
+    </script>
+
+    <script src="app.js?v=1761213000"></script>
+    <script src="plaid-app.js?v=1761213000"></script>
 </body>
 </html>
