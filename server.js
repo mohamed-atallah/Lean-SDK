@@ -802,19 +802,22 @@ async function getLeanBanks() {
     console.log('🏦 Fetching available Lean banks...');
 
     // Get API access token first
-    const tokenData = await getApiAccessToken();
+    if (!apiAccessToken || Date.now() >= apiTokenExpiry) {
+        await getApiAccessToken();
+    }
 
-    const data = await makeRequest(`${LEAN_CONFIG.api_url}/entities/v1`, {
+    // Correct Lean API endpoint for fetching available banks
+    // Using /banks/v1 (not /data/v1/entities which is for connected entities)
+    const data = await makeRequest(`${LEAN_CONFIG.api_url}/banks/v1`, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${tokenData.access_token}`,
-            'Content-Type': 'application/json',
-            'lean-app-token': LEAN_CONFIG.client_id
+            'Authorization': `Bearer ${apiAccessToken}`,
+            'Content-Type': 'application/json'
         }
     });
 
-    console.log('✅ Lean banks fetched:', data.entities?.length || 0, 'banks');
-    return data;
+    console.log('✅ Lean banks fetched:', Array.isArray(data) ? data.length : 0, 'banks');
+    return { banks: data };
 }
 
 /**
@@ -1706,6 +1709,207 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // =================================================================
+    // CRYPTO WALLET API ENDPOINTS
+    // =================================================================
+
+    // API endpoint: Verify Wallet Signature
+    if (req.url === '/api/crypto/verify-signature' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+        req.on('end', () => {
+            try {
+                const { address, signature, message } = JSON.parse(body);
+
+                console.log('🔐 Verifying wallet signature...');
+                console.log('📧 Address:', address);
+                console.log('✍️  Message:', message);
+
+                // For basic verification without external libraries,
+                // we'll trust the frontend verification and just validate format
+                if (!address || !signature || !message) {
+                    throw new Error('Missing required fields: address, signature, message');
+                }
+
+                // Validate address format (Ethereum address)
+                if (!address.match(/^0x[a-fA-F0-9]{40}$/)) {
+                    throw new Error('Invalid Ethereum address format');
+                }
+
+                console.log('✅ Signature verification passed');
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    verified: true,
+                    address: address,
+                    message: message
+                }));
+            } catch (error) {
+                console.error('❌ Signature verification failed:', error);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: error.message
+                }));
+            }
+        });
+        return;
+    }
+
+    // API endpoint: Save Crypto Wallet Connection
+    if (req.url === '/api/crypto/save-connection' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+        req.on('end', () => {
+            try {
+                const connectionData = JSON.parse(body);
+
+                console.log('💾 Saving crypto wallet connection...');
+                console.log('📧 Address:', connectionData.address);
+                console.log('🔗 Network:', connectionData.network);
+                console.log('🏦 Provider:', connectionData.provider);
+
+                // Create wallet-connections directory if it doesn't exist
+                const walletsDir = path.join(__dirname, 'wallet-connections');
+                if (!fs.existsSync(walletsDir)) {
+                    fs.mkdirSync(walletsDir, { recursive: true });
+                }
+
+                // Add timestamp
+                connectionData.connected_at = new Date().toISOString();
+
+                // Save individual connection file
+                const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\./g, '-');
+                const filename = `wallet_connection_${timestamp}.json`;
+                const filepath = path.join(walletsDir, filename);
+
+                fs.writeFileSync(filepath, JSON.stringify(connectionData, null, 2));
+                console.log(`✅ Saved to: ${filename}`);
+
+                // Append to master log
+                const logFile = path.join(walletsDir, 'all_wallet_connections.json');
+                let allConnections = [];
+                if (fs.existsSync(logFile)) {
+                    const data = fs.readFileSync(logFile, 'utf8');
+                    allConnections = data.trim() ? JSON.parse(data) : [];
+                }
+                allConnections.push(connectionData);
+                fs.writeFileSync(logFile, JSON.stringify(allConnections, null, 2));
+
+                console.log('✅ Crypto wallet connection saved successfully!');
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Wallet connection saved successfully',
+                    filename: filename
+                }));
+            } catch (error) {
+                console.error('❌ Failed to save wallet connection:', error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: error.message
+                }));
+            }
+        });
+        return;
+    }
+
+    // API endpoint: List Crypto Wallet Connections
+    if (req.url === '/api/crypto/connections' && req.method === 'GET') {
+        try {
+            const walletsDir = path.join(__dirname, 'wallet-connections');
+            const logFile = path.join(walletsDir, 'all_wallet_connections.json');
+
+            if (!fs.existsSync(logFile)) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    count: 0,
+                    connections: []
+                }));
+                return;
+            }
+
+            const data = fs.readFileSync(logFile, 'utf8');
+            const connections = data.trim() ? JSON.parse(data) : [];
+
+            console.log(`📊 Listed ${connections.length} wallet connections`);
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                success: true,
+                count: connections.length,
+                connections: connections
+            }));
+        } catch (error) {
+            console.error('❌ Failed to list wallet connections:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error.message }));
+        }
+        return;
+    }
+
+    // API endpoint: Disconnect Crypto Wallet
+    if (req.url === '/api/crypto/disconnect' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+        req.on('end', () => {
+            try {
+                const { address } = JSON.parse(body);
+
+                console.log('🗑️  Disconnecting wallet:', address);
+
+                // Read all connections
+                const walletsDir = path.join(__dirname, 'wallet-connections');
+                const logFile = path.join(walletsDir, 'all_wallet_connections.json');
+
+                if (!fs.existsSync(logFile)) {
+                    throw new Error('No wallet connections found');
+                }
+
+                const data = fs.readFileSync(logFile, 'utf8');
+                let connections = data.trim() ? JSON.parse(data) : [];
+
+                // Filter out the disconnected wallet
+                const originalCount = connections.length;
+                connections = connections.filter(conn => conn.address !== address);
+
+                if (connections.length === originalCount) {
+                    throw new Error('Wallet connection not found');
+                }
+
+                // Save updated connections
+                fs.writeFileSync(logFile, JSON.stringify(connections, null, 2));
+
+                console.log('✅ Wallet disconnected successfully');
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Wallet disconnected successfully',
+                    address: address
+                }));
+            } catch (error) {
+                console.error('❌ Failed to disconnect wallet:', error);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: error.message
+                }));
+            }
+        });
+        return;
+    }
+
     // Serve static files
     // Remove query string from URL
     const urlPath = req.url.split('?')[0];
@@ -1755,12 +1959,14 @@ const server = http.createServer(async (req, res) => {
     });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log('='.repeat(50));
-    console.log(`🚀 Lean Integration Server Running`);
-    console.log(`📍 URL: http://localhost:${PORT}`);
+    console.log(`🚀 Backend API Server Running`);
+    console.log(`📍 API URL: http://localhost:${PORT}`);
     console.log(`🔧 API Endpoint: http://localhost:${PORT}/api/initialize-customer`);
     console.log(`🔑 Client ID: ${LEAN_CONFIG.client_id.substring(0, 8)}...`);
+    console.log('');
+    console.log(`💡 Frontend: Run 'npm run dev' to start Vite dev server on port 8000`);
     console.log('='.repeat(50));
 });

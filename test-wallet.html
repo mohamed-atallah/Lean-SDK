@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Detection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-box {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        pre {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Crypto Wallet Detection Test</h1>
+
+    <div class="test-box">
+        <h2>Step 1: Wallet Detection</h2>
+        <div id="detection-result">
+            <p>Checking for wallets...</p>
+        </div>
+    </div>
+
+    <div class="test-box">
+        <h2>Step 2: Connect to MetaMask</h2>
+        <button id="connectBtn">Connect MetaMask</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-box">
+        <h2>Browser Console Logs</h2>
+        <p>Open browser DevTools (F12) to see detailed logs</p>
+        <button onclick="location.reload()">Refresh Page</button>
+    </div>
+
+    <script>
+        console.log('='.repeat(50));
+        console.log('🔍 WALLET DETECTION TEST');
+        console.log('='.repeat(50));
+
+        // Test 1: Check if window.ethereum exists
+        console.log('1. Checking window.ethereum...');
+        if (typeof window.ethereum !== 'undefined') {
+            console.log('✅ window.ethereum is available');
+            console.log('   Properties:', Object.keys(window.ethereum));
+
+            if (window.ethereum.isMetaMask) {
+                console.log('✅ MetaMask is installed!');
+            } else if (window.ethereum.isCoinbaseWallet) {
+                console.log('✅ Coinbase Wallet is installed!');
+            } else if (window.ethereum.isTrust) {
+                console.log('✅ Trust Wallet is installed!');
+            } else {
+                console.log('ℹ️  Unknown Ethereum wallet detected');
+            }
+        } else {
+            console.log('❌ window.ethereum is NOT available');
+        }
+
+        // Test 2: Check Phantom
+        console.log('2. Checking window.solana (Phantom)...');
+        if (typeof window.solana !== 'undefined') {
+            console.log('✅ window.solana is available');
+            if (window.solana.isPhantom) {
+                console.log('✅ Phantom wallet is installed!');
+            }
+        } else {
+            console.log('❌ window.solana is NOT available (Phantom not installed)');
+        }
+
+        console.log('='.repeat(50));
+
+        // Display detection results
+        const detectionDiv = document.getElementById('detection-result');
+        let detectionHTML = '';
+
+        if (typeof window.ethereum !== 'undefined') {
+            detectionHTML += '<div class="success">✅ Ethereum Wallet Detected<br>';
+            if (window.ethereum.isMetaMask) {
+                detectionHTML += '<strong>Type: MetaMask</strong>';
+            } else if (window.ethereum.isCoinbaseWallet) {
+                detectionHTML += '<strong>Type: Coinbase Wallet</strong>';
+            } else if (window.ethereum.isTrust) {
+                detectionHTML += '<strong>Type: Trust Wallet</strong>';
+            } else {
+                detectionHTML += '<strong>Type: Unknown Ethereum Wallet</strong>';
+            }
+            detectionHTML += '</div>';
+        } else {
+            detectionHTML += '<div class="error">❌ No Ethereum wallet detected<br>';
+            detectionHTML += 'Please install MetaMask from <a href="https://metamask.io/download/" target="_blank">metamask.io</a></div>';
+        }
+
+        if (typeof window.solana !== 'undefined' && window.solana.isPhantom) {
+            detectionHTML += '<div class="success">✅ Phantom (Solana) Detected</div>';
+        }
+
+        detectionDiv.innerHTML = detectionHTML;
+
+        // Connect button
+        const connectBtn = document.getElementById('connectBtn');
+        const connectionResult = document.getElementById('connection-result');
+
+        connectBtn.addEventListener('click', async function() {
+            console.log('🔗 Connect button clicked');
+
+            if (typeof window.ethereum === 'undefined') {
+                connectionResult.innerHTML = '<div class="error">❌ MetaMask not installed</div>';
+                console.error('❌ window.ethereum is undefined');
+                return;
+            }
+
+            console.log('✅ window.ethereum exists, requesting accounts...');
+
+            try {
+                connectBtn.textContent = 'Connecting...';
+                connectBtn.disabled = true;
+
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+
+                console.log('✅ Accounts received:', accounts);
+
+                const address = accounts[0];
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const balance = await window.ethereum.request({
+                    method: 'eth_getBalance',
+                    params: [address, 'latest']
+                });
+
+                const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
+
+                console.log('✅ Connection successful!');
+                console.log('   Address:', address);
+                console.log('   Chain ID:', chainId);
+                console.log('   Balance:', ethBalance, 'ETH');
+
+                connectionResult.innerHTML = `
+                    <div class="success">
+                        ✅ Connected Successfully!<br><br>
+                        <strong>Address:</strong><br>
+                        <pre>${address}</pre>
+                        <strong>Chain ID:</strong> ${chainId}<br>
+                        <strong>Balance:</strong> ${ethBalance.toFixed(4)} ETH
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Connection failed:', error);
+                connectionResult.innerHTML = `
+                    <div class="error">
+                        ❌ Connection Failed<br><br>
+                        <strong>Error:</strong> ${error.message}<br>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            } finally {
+                connectBtn.textContent = 'Connect MetaMask';
+                connectBtn.disabled = false;
+            }
+        });
+
+        // Make sure MetaMask is unlocked
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.request({ method: 'eth_accounts' })
+                .then(accounts => {
+                    if (accounts.length > 0) {
+                        console.log('ℹ️  MetaMask is already connected to:', accounts[0]);
+                    } else {
+                        console.log('ℹ️  MetaMask is locked or not connected');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error checking accounts:', error);
+                });
+        }
+    </script>
+</body>
+</html>

@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * Connect to bank using Lean SDK
      */
     async function connectToBank() {
-        const accountType = accountTypeSelect.value.toLowerCase(); // 'personal' or 'business'
+        const accountType = accountTypeSelect.value.toUpperCase(); // 'PERSONAL' or 'BUSINESS' (uppercase required by Lean SDK)
 
         debugLog('🔗 Starting bank connection...');
 
@@ -272,10 +272,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const leanBankSelect = document.getElementById('leanBankSelect');
             const selectedBank = leanBankSelect ? leanBankSelect.value : '';
 
+            // Get selected language
+            const leanLanguageSelect = document.getElementById('leanLanguage');
+            const selectedLanguage = leanLanguageSelect ? leanLanguageSelect.value : 'en';
+
             // Prepare connection config - exactly as per Lean docs
-            // NOTE: Lean.connect() opens as a full-screen iframe takeover
-            // This is by design from Lean SDK and provides an immersive experience
-            // Different from Plaid SDK which opens as a centered modal dialog
             const connectConfig = {
                 app_token: appToken,
                 permissions: [
@@ -294,7 +295,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 access_token: currentAccessToken,
                 fail_redirect_url: window.location.origin + '/lean-failed.html',
                 success_redirect_url: window.location.origin + '/lean-success.html',
-                account_type: accountType
+                account_type: accountType,
+                language: selectedLanguage,  // "en" for English, "ar" for Arabic (with RTL support)
+                // UI Customization (optional)
+                customization: {
+                    theme_color: "#667eea",           // Primary brand color
+                    button_text_color: "#ffffff",     // White text on buttons
+                    button_border_radius: 8,          // Number (pixels) or "pill" for fully rounded
+                    link_color: "#667eea",            // Call-to-action element color
+                    overlay_color: "rgba(0,0,0,0.5)" // Semi-transparent modal overlay
+                    // dialog_mode: "uncontained"     // Uncomment for non-modal mode
+                }
             };
 
             // Add bank_identifier if a bank is pre-selected
@@ -305,8 +316,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
             debugLog('📋 Lean.connect() config:', connectConfig);
 
+            // Debug: Check if Lean SDK is available
+            console.log('🔍 Checking window.Lean:', window.Lean);
+            console.log('🔍 typeof window.Lean:', typeof window.Lean);
+            console.log('🔍 window.Lean.connect:', window.Lean?.connect);
+
+            if (!window.Lean) {
+                throw new Error('❌ window.Lean is not defined. SDK may not have loaded correctly.');
+            }
+
+            if (typeof window.Lean.connect !== 'function') {
+                throw new Error('❌ window.Lean.connect is not a function. Available methods: ' + Object.keys(window.Lean).join(', '));
+            }
+
+            // Add callback to debug SDK response
+            connectConfig.callback = function(response) {
+                console.log('📱 Lean SDK Callback:', response);
+                debugLog('📱 Lean SDK Response:', response);
+            };
+
             // Call Lean.connect() directly
-            window.Lean.connect(connectConfig);
+            console.log('🚀 Calling window.Lean.connect()...');
+            const result = window.Lean.connect(connectConfig);
+            console.log('✅ window.Lean.connect() returned:', result);
 
             debugLog('✅ Lean.connect() called - SDK popup should open');
 
@@ -523,13 +555,13 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             debugLog('🏦 Fetching available Lean banks...');
 
-            const response = await fetch('http://localhost:8000/api/lean/banks');
+            const response = await fetch('/api/lean/banks');
             if (!response.ok) {
                 throw new Error('Failed to fetch Lean banks');
             }
 
             const data = await response.json();
-            const banks = data.entities || [];
+            const banks = data.banks || [];
 
             debugLog('✅ Lean banks loaded:', banks.length);
 
@@ -539,8 +571,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add banks to dropdown
             banks.forEach(bank => {
                 const option = document.createElement('option');
-                option.value = bank.id;
-                option.textContent = `${bank.display_name || bank.name} (${bank.id})`;
+                option.value = bank.identifier || bank.id;
+                option.textContent = `${bank.name || bank.display_name} (${bank.identifier || bank.id})`;
                 bankSelect.appendChild(option);
             });
 

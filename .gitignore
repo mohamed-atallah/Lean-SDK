@@ -22,6 +22,10 @@ plaid-connections/*.json
 webhooks/*.json
 !webhooks/.gitkeep
 
+# Crypto wallet connection data (may contain sensitive wallet addresses and balances)
+wallet-connections/*.json
+!wallet-connections/.gitkeep
+
 # OS Files
 .DS_Store
 Thumbs.db

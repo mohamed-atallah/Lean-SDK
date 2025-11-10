@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lean SDK Diagnostic Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .result {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .success { color: #38a169; }
+        .error { color: #e53e3e; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Lean SDK Diagnostic Test</h1>
+
+    <div class="result">
+        <h3>SDK Loading Status</h3>
+        <div id="loadStatus">Checking...</div>
+    </div>
+
+    <div class="result">
+        <h3>Available Methods</h3>
+        <div id="methods">Checking...</div>
+    </div>
+
+    <button onclick="testConnect()">Test Lean.connect()</button>
+    <button onclick="location.reload()">Reload Page</button>
+
+    <div class="result">
+        <h3>Console Output</h3>
+        <pre id="console"></pre>
+    </div>
+
+    <!-- Lean SDK Script -->
+    <script src="https://cdn.leantech.me/link/loader/prod/sa/latest/lean-link-loader.min.js"
+            onload="sdkLoaded()"
+            onerror="sdkError()"></script>
+
+    <script>
+        const logs = [];
+
+        function log(message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            logs.push(logMessage);
+            console.log(logMessage);
+            document.getElementById('console').textContent = logs.join('\n');
+            if (isError) console.error(logMessage);
+        }
+
+        function sdkLoaded() {
+            log('✅ Lean SDK script loaded');
+            setTimeout(checkSDK, 100);
+        }
+
+        function sdkError() {
+            log('❌ Failed to load Lean SDK script', true);
+            document.getElementById('loadStatus').innerHTML = '<span class="error">❌ Failed to load SDK</span>';
+        }
+
+        function checkSDK() {
+            const status = document.getElementById('loadStatus');
+            const methods = document.getElementById('methods');
+
+            // Check window.Lean
+            if (typeof window.Lean === 'undefined') {
+                status.innerHTML = '<span class="error">❌ window.Lean is undefined</span>';
+                log('❌ window.Lean is undefined', true);
+            } else {
+                status.innerHTML = '<span class="success">✅ window.Lean is available</span>';
+                log('✅ window.Lean is available');
+                log('Type: ' + typeof window.Lean);
+
+                // List available methods
+                try {
+                    const leanMethods = Object.keys(window.Lean);
+                    methods.innerHTML = '<span class="success">Available methods:</span><pre>' +
+                        JSON.stringify(leanMethods, null, 2) + '</pre>';
+                    log('Available methods: ' + leanMethods.join(', '));
+
+                    // Check if connect is available
+                    if (typeof window.Lean.connect === 'function') {
+                        log('✅ window.Lean.connect is a function');
+                    } else {
+                        log('❌ window.Lean.connect is NOT a function', true);
+                    }
+                } catch (e) {
+                    methods.innerHTML = '<span class="error">Error: ' + e.message + '</span>';
+                    log('❌ Error checking methods: ' + e.message, true);
+                }
+            }
+        }
+
+        function testConnect() {
+            log('🚀 Testing Lean.connect()...');
+
+            if (typeof window.Lean === 'undefined') {
+                alert('❌ window.Lean is not available');
+                log('❌ Cannot test - window.Lean not available', true);
+                return;
+            }
+
+            if (typeof window.Lean.connect !== 'function') {
+                alert('❌ window.Lean.connect is not a function');
+                log('❌ Cannot test - window.Lean.connect not a function', true);
+                return;
+            }
+
+            // Test with minimal config
+            const testConfig = {
+                app_token: "0e2f5780...", // Replace with your actual token
+                customer_id: "test-customer-123",
+                permissions: ["identity", "accounts"],
+                sandbox: true,
+                callback: function(response) {
+                    log('📱 Callback received: ' + JSON.stringify(response));
+                    alert('Callback: ' + JSON.stringify(response));
+                }
+            };
+
+            try {
+                log('Calling window.Lean.connect() with config: ' + JSON.stringify(testConfig, null, 2));
+                const result = window.Lean.connect(testConfig);
+                log('✅ window.Lean.connect() returned: ' + JSON.stringify(result));
+                alert('✅ Lean.connect() called successfully. Check if modal opened.');
+            } catch (e) {
+                log('❌ Error calling Lean.connect(): ' + e.message, true);
+                alert('❌ Error: ' + e.message);
+            }
+        }
+
+        // Auto-check after 1 second
+        setTimeout(checkSDK, 1000);
+    </script>
+</body>
+</html>

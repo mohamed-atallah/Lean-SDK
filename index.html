@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lean & Plaid SDK Integration</title>
+    <title>Lean, Plaid & Crypto Wallet Integration</title>
 
     <!-- Content Security Policy for images and styles -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.leantech.me https://*.leantech.me https://cdn.plaid.com https://*.plaid.com; script-src 'self' 'unsafe-inline' https://cdn.leantech.me https://cdn.plaid.com; style-src 'self' 'unsafe-inline' https://cdn.leantech.me; img-src 'self' https: data: blob:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.leantech.me https://*.leantech.me https://cdn.plaid.com https://*.plaid.com https://*.walletconnect.com https://*.walletconnect.org https://unpkg.com https://cdn.ethers.io https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.leantech.me https://cdn.plaid.com https://*.walletconnect.com https://unpkg.com https://cdn.ethers.io https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.leantech.me; img-src 'self' https: data: blob:; connect-src 'self' https: wss:;">
 
     <!-- Lean SDK Script - Load at page initialization -->
     <script src="https://cdn.leantech.me/link/loader/prod/sa/latest/lean-link-loader.min.js"
@@ -15,6 +15,8 @@
 
     <!-- Plaid Link Script -->
     <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+
+    <!-- WalletConnect v2 (Reown AppKit) and Ethers.js will be loaded as ES modules via Vite -->
 
     <link rel="stylesheet" href="styles.css">
 
@@ -58,6 +60,11 @@
             box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);
         }
 
+        .tab-btn.crypto-tab.active {
+            background: linear-gradient(135deg, #f7931a, #ff6b35);
+            box-shadow: 0 8px 25px rgba(247, 147, 26, 0.4);
+        }
+
         .tab-content {
             display: none;
         }
@@ -70,8 +77,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏦 Banking SDK Integration</h1>
-            <p class="subtitle">Test Lean (Saudi Arabia) and Plaid (US) integrations</p>
+            <h1>🏦 Multi-Platform Financial Integration</h1>
+            <p class="subtitle">Test Lean (Saudi Arabia), Plaid (US), and Crypto Wallets integrations</p>
         </header>
 
         <!-- Tab Navigation -->
@@ -81,6 +88,9 @@
             </button>
             <button class="tab-btn plaid-tab" onclick="switchTab('plaid')">
                 🔵 Plaid SDK (US)
+            </button>
+            <button class="tab-btn crypto-tab" onclick="switchTab('crypto')">
+                🔐 Crypto Wallets
             </button>
         </div>
 
@@ -196,6 +206,17 @@
                     <option value="PERSONAL">Personal</option>
                     <option value="BUSINESS">Business</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="leanLanguage">Language / اللغة</label>
+                <select id="leanLanguage">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="ar">🇸🇦 العربية (Arabic)</option>
+                </select>
+                <small style="color: #718096; display: block; margin-top: 5px;">
+                    💡 Select language for the Lean SDK interface (includes full RTL support for Arabic)
+                </small>
             </div>
 
             <div class="form-group">
@@ -646,6 +667,171 @@
         </div>
         <!-- END PLAID TAB CONTENT -->
 
+        <!-- CRYPTO WALLET TAB CONTENT -->
+        <div id="crypto-tab" class="tab-content">
+            <div class="card">
+                <h2>🔐 Step 1: Select Wallet Provider</h2>
+                <p>Choose your crypto wallet provider to connect</p>
+
+                <!-- Wallet Detection Status -->
+                <div id="walletDetectionStatus" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>🔍 Detecting Available Wallets...</strong>
+                    <div id="detectedWallets" style="margin-top: 10px; font-size: 0.9em;">
+                        <!-- Detection results will appear here -->
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px;">
+                    <!-- Wallet Provider Selection -->
+                    <div style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; background: #f9f9f9;">
+                        <h3 style="margin-top: 0; font-size: 1.1em;">🏦 Wallet Provider</h3>
+
+                        <select id="walletProvider" style="width: 100%; padding: 15px; font-size: 1em; border-radius: 8px; border: 2px solid #e0e0e0; margin-bottom: 15px;">
+                            <option value="">-- Select Wallet Provider --</option>
+                            <optgroup label="🌐 Browser Wallets (Direct Connection)">
+                                <option value="metamask">MetaMask - Most popular Ethereum wallet</option>
+                                <option value="coinbase">Coinbase Wallet - Coinbase's self-custody wallet</option>
+                                <option value="trust">Trust Wallet - Multi-chain mobile wallet</option>
+                                <option value="phantom">Phantom - Solana wallet</option>
+                            </optgroup>
+                            <optgroup label="🔗 WalletConnect (QR Code Scan)">
+                                <option value="walletconnect">WalletConnect - Universal wallet connector</option>
+                            </optgroup>
+                            <optgroup label="💱 Exchange Wallets">
+                                <option value="binance">Binance - Leading crypto exchange</option>
+                                <option value="kraken">Kraken - Established US exchange</option>
+                                <option value="bitstamp">Bitstamp - European exchange</option>
+                            </optgroup>
+                            <optgroup label="🔐 Hardware Wallets">
+                                <option value="ledger">Ledger - Hardware wallet (via Ledger Live)</option>
+                                <option value="trezor">Trezor - Hardware wallet</option>
+                            </optgroup>
+                        </select>
+
+                        <div class="info-box" style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <strong>📱 Connection Methods:</strong>
+                            <ul style="margin: 10px 0 0 20px; font-size: 0.85em;">
+                                <li><strong>Browser Wallets:</strong> Direct connection if extension installed</li>
+                                <li><strong>WalletConnect:</strong> Scan QR code with mobile wallet app (supports 100+ wallets!)</li>
+                                <li><strong>Exchanges:</strong> OAuth connection (requires API keys)</li>
+                                <li><strong>Hardware:</strong> Connect via Ledger Live or Trezor Suite</li>
+                            </ul>
+                        </div>
+
+                        <!-- WalletConnect Setup Info -->
+                        <div class="info-box" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2196f3;">
+                            <strong>🔗 WalletConnect Setup Required:</strong>
+                            <p style="margin: 10px 0 0 0; font-size: 0.85em;">
+                                To use WalletConnect, you need a <strong>free Project ID</strong>:
+                            </p>
+                            <ol style="margin: 10px 0 0 20px; font-size: 0.85em;">
+                                <li>Go to <a href="https://cloud.walletconnect.com" target="_blank" style="color: #2196f3; font-weight: bold;">cloud.walletconnect.com</a></li>
+                                <li>Create a free account and new project</li>
+                                <li>Copy your Project ID</li>
+                                <li>Update <code>projectId</code> in <code>crypto-wallet-app.js:555</code></li>
+                            </ol>
+                            <p style="margin: 10px 0 0 0; font-size: 0.85em;">
+                                📖 <strong>Full guide:</strong> See <a href="./WALLETCONNECT_SETUP.md" target="_blank" style="color: #2196f3;">WALLETCONNECT_SETUP.md</a> for detailed instructions.
+                            </p>
+                            <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #666;">
+                                ℹ️ WalletConnect is 100% free and allows users to connect ANY mobile wallet (MetaMask, Trust, Rainbow, Coinbase Wallet, and 100+ others!)
+                            </p>
+                        </div>
+
+                        <button id="connectWalletBtn" class="connect-btn" style="width: 100%;" disabled>
+                            🔗 Connect Wallet
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connection Results -->
+            <div id="cryptoResultsCard" class="card" style="display: none;">
+                <h2>✅ Connection Results</h2>
+                <div id="cryptoResults" class="results-box">
+                    <!-- Connection results will appear here -->
+                </div>
+            </div>
+
+            <!-- Wallet Details -->
+            <div id="walletDetailsCard" class="card" style="display: none;">
+                <h2>💰 Step 2: Wallet Details & Balance</h2>
+                <div id="walletDetails" class="results-box">
+                    <!-- Wallet details will appear here -->
+                </div>
+
+                <button id="verifyOwnershipBtn" class="connect-btn" style="margin-top: 15px; display: none;">
+                    ✍️ Verify Ownership (Sign Message)
+                </button>
+            </div>
+
+            <!-- Signature Verification -->
+            <div id="signatureCard" class="card" style="display: none;">
+                <h2>✍️ Step 3: Ownership Verification</h2>
+                <div id="signatureResults" class="results-box">
+                    <!-- Signature results will appear here -->
+                </div>
+            </div>
+
+            <!-- Connected Wallets -->
+            <div class="card">
+                <h2>📂 Step 4: View Connected Wallets</h2>
+                <p>View and manage your connected crypto wallets</p>
+
+                <button id="loadWalletsBtn" class="connect-btn" style="margin-bottom: 20px;">
+                    🔄 Load Connected Wallets
+                </button>
+
+                <div id="walletsListCard" style="display: none;">
+                    <div id="walletsList" class="results-box">
+                        <!-- Connected wallets will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Mode -->
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="cryptoDebugMode" style="width: 20px; height: 20px; cursor: pointer;">
+                        <span>🐛 Debug Mode (Show detailed console logs)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="card">
+                <h2>ℹ️ Help & Information</h2>
+                <div class="info-section">
+                    <h3>🔗 Supported Networks</h3>
+                    <p><strong>Ethereum:</strong> ETH and ERC-20 tokens</p>
+                    <p><strong>Binance Smart Chain:</strong> BNB and BEP-20 tokens</p>
+                    <p><strong>Polygon:</strong> MATIC and compatible tokens</p>
+                    <p><strong>Solana:</strong> SOL and SPL tokens</p>
+                    <p><strong>Bitcoin:</strong> BTC (selected wallets)</p>
+
+                    <h3 style="margin-top: 20px;">🔐 Security & Privacy</h3>
+                    <p>✅ Your private keys never leave your wallet</p>
+                    <p>✅ We only request read-only access to balances</p>
+                    <p>✅ Signature verification proves ownership without exposing keys</p>
+                    <p>✅ You can disconnect wallets anytime</p>
+
+                    <h3 style="margin-top: 20px;">📱 How It Works</h3>
+                    <ol>
+                        <li>Select your wallet provider from the dropdown</li>
+                        <li>Click "Connect Wallet" to initiate connection</li>
+                        <li>Approve the connection request in your wallet</li>
+                        <li>Sign a message to verify ownership</li>
+                        <li>View your wallet address, network, and balances</li>
+                    </ol>
+
+                    <p style="margin-top: 20px;"><strong>Environment:</strong> Mainnet & Testnet supported (auto-detected)</p>
+                    <p class="help-note">ℹ️ Make sure your wallet extension is installed and unlocked</p>
+                </div>
+            </div>
+        </div>
+        <!-- END CRYPTO WALLET TAB CONTENT -->
+
         <footer>
             <p>Built with <a href="https://docs.leantech.me/v2.0-KSA/docs/web" target="_blank">Lean Web SDK</a> & <a href="https://plaid.com/docs/" target="_blank">Plaid API</a></p>
         </footer>
@@ -674,11 +860,15 @@
             if (tabName === 'plaid') {
                 document.getElementById('plaidResultsCard').style.display = 'block';
                 document.getElementById('plaidAccountsCard').style.display = 'block';
+            } else if (tabName === 'crypto') {
+                document.getElementById('cryptoResultsCard').style.display = 'block';
+                document.getElementById('walletDetailsCard').style.display = 'block';
             }
         }
     </script>
 
-    <script src="app.js?v=1761213000"></script>
-    <script src="plaid-app.js?v=1761213000"></script>
+    <script src="app.js"></script>
+    <script src="plaid-app.js"></script>
+    <script type="module" src="crypto-wallet-app.js"></script>
 </body>
 </html>

@@ -596,3 +596,23 @@ footer a:hover {
     animation: checkmark 0.4s ease-out;
     will-change: transform;
 }
+
+/* Plaid white background overlay */
+/* Creates a professional white background when Plaid Link modal opens */
+.plaid-white-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 999998; /* Just below Plaid's overlay (which is 9999+) */
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.plaid-white-overlay.active {
+    display: block;
+    opacity: 1;
+}

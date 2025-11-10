@@ -1,0 +1,29 @@
+{
+  "name": "lean-sdk",
+  "version": "1.0.0",
+  "description": "A modern web application demonstrating **complete integration** of both **Lean SDK** (Saudi Arabia) and **Plaid SDK** (US) for connecting to financial institutions globally. This project includes a backend server, beautiful tabbed UI, and proper implementation following official documentation from both providers.",
+  "main": "app.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "backend": "node server.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github-personal:mohamed-atallah/Lean-SDK.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "vite": "^7.2.2"
+  },
+  "dependencies": {
+    "@reown/appkit": "^1.8.13",
+    "@reown/appkit-adapter-ethers": "^1.8.13",
+    "ethers": "^6.15.0"
+  }
+}

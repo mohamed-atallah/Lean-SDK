@@ -9,6 +9,22 @@ let plaidAccessToken = null;
 let plaidItemId = null;
 let plaidHandler = null;
 
+/**
+ * Helper function to remove white overlay
+ */
+function removeWhiteOverlay() {
+    const overlay = document.getElementById('plaidWhiteOverlay');
+    if (overlay) {
+        // Fade out animation
+        overlay.classList.remove('active');
+        // Remove from DOM after transition
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+        console.log('✅ White overlay removed');
+    }
+}
+
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('='.repeat(50));
@@ -147,7 +163,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             plaidHandler = Plaid.create(plaidConfig);
 
-            // Step 3: Open Plaid Link
+            // Step 3: Create white overlay for professional appearance
+            const whiteOverlay = document.createElement('div');
+            whiteOverlay.className = 'plaid-white-overlay';
+            whiteOverlay.id = 'plaidWhiteOverlay';
+            document.body.appendChild(whiteOverlay);
+
+            // Trigger reflow to enable CSS transition
+            setTimeout(() => {
+                whiteOverlay.classList.add('active');
+            }, 10);
+
+            // Step 4: Open Plaid Link
             // Opens as a centered modal dialog on top of the current page
             console.log('🚀 Opening Plaid Link...');
             plaidHandler.open();
@@ -198,6 +225,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🎉 Plaid Link Success!');
         console.log('Public Token:', public_token);
         console.log('Metadata:', metadata);
+
+        // Remove white overlay when Plaid closes
+        removeWhiteOverlay();
 
         plaidResultsDiv.innerHTML = `
             <div class="status-badge status-success">✅ Connection Successful!</div>
@@ -308,6 +338,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🚪 Plaid Link Exit');
         console.log('Error:', err);
         console.log('Metadata:', metadata);
+
+        // Remove white overlay when Plaid closes
+        removeWhiteOverlay();
 
         if (err != null) {
             plaidResultsDiv.innerHTML = `
@@ -1093,7 +1126,18 @@ document.addEventListener('DOMContentLoaded', function() {
             plaidHandler = Plaid.create(plaidConfig);
             console.log('✅ Plaid Link handler created');
 
-            // Step 3: Open Plaid Link
+            // Step 3: Create white overlay for professional appearance
+            const whiteOverlay = document.createElement('div');
+            whiteOverlay.className = 'plaid-white-overlay';
+            whiteOverlay.id = 'plaidWhiteOverlay';
+            document.body.appendChild(whiteOverlay);
+
+            // Trigger reflow to enable CSS transition
+            setTimeout(() => {
+                whiteOverlay.classList.add('active');
+            }, 10);
+
+            // Step 4: Open Plaid Link
             console.log('🚀 Opening Plaid Link modal...');
             plaidResultsDiv.innerHTML = '<p class="loading">⏳ Opening Plaid Link modal...</p>';
 

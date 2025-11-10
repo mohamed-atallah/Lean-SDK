@@ -25,7 +25,15 @@
       "Bash(bash:*)",
       "Bash(echo \"EXIT_CODE: $?\")",
       "WebFetch(domain:plaid.com)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:docs.walletconnect.com)",
+      "WebFetch(domain:docs.reown.com)",
+      "WebFetch(domain:walletguide.walletconnect.network)",
+      "WebFetch(domain:alpha-docs.walletconnect.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
