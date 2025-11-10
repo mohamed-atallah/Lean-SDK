@@ -1,9 +1,6 @@
 // Crypto Wallet Integration with WalletConnect v2 (Reown AppKit)
-
-import { createAppKit } from '@reown/appkit';
-import { EthersAdapter } from '@reown/appkit-adapter-ethers';
-import { mainnet, polygon, bsc, optimism, arbitrum } from '@reown/appkit/networks';
-import { ethers } from 'ethers';
+// IMPORTANT: WalletConnect libraries are loaded dynamically to prevent interference with MetaMask/Phantom
+// Do NOT add static imports for @reown/appkit, @reown/appkit-adapter-ethers, or @reown/appkit/networks
 
 // Global state
 let connectedWallet = null;
@@ -45,7 +42,8 @@ const walletDetailsCard = document.getElementById('walletDetailsCard');
 const signatureCard = document.getElementById('signatureCard');
 const walletsListCard = document.getElementById('walletsListCard');
 
-// Initialize WalletConnect v2 (Reown AppKit)
+// WalletConnect v2 (Reown AppKit) Configuration
+// IMPORTANT: Only initialize when user selects WalletConnect to avoid interfering with direct wallet connections
 const projectId = '5d7ffd6c63b8e2292d9579f958621e89'; // Your Project ID
 
 const metadata = {
@@ -55,31 +53,9 @@ url: window.location.origin,
 icons: ['https://avatars.githubusercontent.com/u/37784886']
 };
 
-try {
-appKit = createAppKit({
-    adapters: [new EthersAdapter()],
-    networks: [mainnet, polygon, bsc, optimism, arbitrum],
-    metadata,
-    projectId,
-    features: {
-        analytics: true,
-        email: false,       // ❌ Disable Email login
-        socials: []         // ❌ Disable all social logins (Google, GitHub, Discord, X/Twitter)
-    },
-    // Customize which wallets to feature prominently
-    featuredWalletIds: [
-        'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
-        '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0', // Trust Wallet
-        '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369', // Rainbow
-        '163d2cf19babf05eb8962e9748f9ebe613ed52ebf9c8107c9a0f104bfcf161b3'  // Phantom
-    ]
-    // Optional: Exclude specific wallets (uncomment to use)
-    // excludedWalletIds: ['wallet-id-to-exclude']
-});
-console.log('✅ WalletConnect v2 (Reown AppKit) initialized - wallets only, no social logins');
-} catch (error) {
-console.error('❌ Failed to initialize WalletConnect v2:', error);
-}
+// Do NOT initialize AppKit on page load - it interferes with MetaMask/Phantom
+// AppKit will be initialized lazily when user selects WalletConnect
+console.log('⚠️ WalletConnect v2 will be initialized only when selected (prevents interference with MetaMask)');
 
 // Debug mode toggle
 cryptoDebugCheckbox.addEventListener('change', function() {
@@ -579,17 +555,49 @@ async function connectWalletConnect() {
     console.log('📝 connectWalletConnect() v2 function called');
     debugLog('Opening WalletConnect v2 (Reown AppKit)...');
 
+    // Lazy initialization - dynamically import and create AppKit only when user selects WalletConnect
     if (!appKit) {
-        console.error('❌ WalletConnect v2 not initialized');
-        cryptoResults.innerHTML = `
-            <div class="status-badge status-error">❌ WalletConnect Not Initialized</div>
-            <div class="response-item">
-                <strong>Error:</strong>
-                <pre>WalletConnect v2 (Reown AppKit) failed to initialize. Please refresh the page.</pre>
-            </div>
-        `;
-        cryptoResultsCard.style.display = 'block';
-        throw new Error('WalletConnect v2 not initialized');
+        console.log('🔧 Dynamically loading WalletConnect v2 libraries...');
+
+        try {
+            // Dynamic imports to prevent interference with MetaMask/Phantom
+            const { createAppKit } = await import('@reown/appkit');
+            const { EthersAdapter } = await import('@reown/appkit-adapter-ethers');
+            const { mainnet, polygon, bsc, optimism, arbitrum } = await import('@reown/appkit/networks');
+
+            console.log('✅ WalletConnect libraries loaded');
+            console.log('🔧 Initializing WalletConnect v2 (Reown AppKit)...');
+
+            appKit = createAppKit({
+                adapters: [new EthersAdapter()],
+                networks: [mainnet, polygon, bsc, optimism, arbitrum],
+                metadata,
+                projectId,
+                features: {
+                    analytics: true,
+                    email: false,       // ❌ Disable Email login
+                    socials: []         // ❌ Disable all social logins
+                },
+                featuredWalletIds: [
+                    'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
+                    '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0', // Trust Wallet
+                    '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369', // Rainbow
+                    '163d2cf19babf05eb8962e9748f9ebe613ed52ebf9c8107c9a0f104bfcf161b3'  // Phantom
+                ]
+            });
+            console.log('✅ WalletConnect v2 (Reown AppKit) initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize WalletConnect v2:', error);
+            cryptoResults.innerHTML = `
+                <div class="status-badge status-error">❌ WalletConnect Initialization Failed</div>
+                <div class="response-item">
+                    <strong>Error:</strong>
+                    <pre>${error.message}</pre>
+                </div>
+            `;
+            cryptoResultsCard.style.display = 'block';
+            throw new Error('WalletConnect v2 initialization failed: ' + error.message);
+        }
     }
 
     try {
@@ -631,8 +639,9 @@ async function connectWalletConnect() {
                 debugLog('Chain ID:', chainId);
                 debugLog('Network:', networkName);
 
-                // Get balance using ethers
+                // Get balance using ethers (dynamic import)
                 try {
+                    const { ethers } = await import('ethers');
                     const provider = new ethers.BrowserProvider(window.ethereum);
                     const balance = await provider.getBalance(address);
                     const ethBalance = parseFloat(ethers.formatEther(balance));
