@@ -607,6 +607,105 @@
             </div>
 
             <div class="card">
+                <h2>💰 Create Test Transaction (Sandbox Only)</h2>
+                <p>Add custom transactions to any connected account to increase or decrease balance</p>
+
+                <div style="background: #fff9e6; padding: 15px; border-radius: 10px; border-left: 4px solid #f6ad55; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #744210; font-size: 0.9em;">
+                        ⚠️ <strong>Important:</strong> This feature only works with accounts connected using the <strong>user_transactions_dynamic</strong> test user.
+                        <br>When connecting via Plaid Link, search for "Platypus Bank" and use credentials:
+                        <br><code>user_transactions_dynamic</code> / <code>pass_good</code>
+                    </p>
+                </div>
+
+                <div style="background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="transactionConnectionSelect" style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                            🏦 Select Account
+                        </label>
+                        <select id="transactionConnectionSelect" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;">
+                            <option value="">-- First, click "Fetch Accounts" in Step 3 above --</option>
+                        </select>
+                        <small style="color: #718096; display: block; margin-top: 5px;">
+                            💡 After connecting a bank, click "📊 Fetch Accounts" in Step 3 to populate this list
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="transactionAmount" style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                            💵 Amount
+                        </label>
+                        <input
+                            type="number"
+                            id="transactionAmount"
+                            step="0.01"
+                            placeholder="500.00"
+                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;"
+                        >
+                        <small style="color: #718096; display: block; margin-top: 5px;">
+                            Positive = Deposit (increase balance), Negative = Withdrawal (decrease balance)
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="transactionName" style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                            📝 Transaction Name
+                        </label>
+                        <input
+                            type="text"
+                            id="transactionName"
+                            placeholder="e.g., Salary Deposit"
+                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;"
+                        >
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="transactionDescription" style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                            📄 Description (optional)
+                        </label>
+                        <input
+                            type="text"
+                            id="transactionDescription"
+                            placeholder="e.g., Monthly salary payment"
+                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;"
+                        >
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="transactionDate" style="display: block; font-weight: 600; margin-bottom: 8px; color: #2d3748;">
+                            📅 Transaction Date
+                        </label>
+                        <input
+                            type="date"
+                            id="transactionDate"
+                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em;"
+                        >
+                        <small style="color: #718096; display: block; margin-top: 5px;">
+                            Must be today or within the last 14 days
+                        </small>
+                    </div>
+
+                    <div style="background: #e6fffa; padding: 12px; border-radius: 8px; border-left: 4px solid #00d4aa; margin-top: 15px;">
+                        <p style="margin: 0; font-size: 0.9em; color: #00695c;">
+                            💡 <strong>Tip:</strong> You can add up to 10 transactions at once. This feature triggers webhooks automatically.
+                        </p>
+                    </div>
+                    <div style="background: #fff3cd; padding: 12px; border-radius: 8px; border-left: 4px solid #f6ad55; margin-top: 10px;">
+                        <p style="margin: 0; font-size: 0.9em; color: #744210;">
+                            ℹ️ <strong>Sandbox Note:</strong> Transactions are added to history but account balances remain static in Plaid Sandbox.
+                            View created transactions by clicking "📋 Get Transactions" on your account.
+                        </p>
+                    </div>
+                </div>
+
+                <button id="createTransactionBtn" class="connect-btn" style="background: linear-gradient(135deg, #48bb78, #38a169); box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);">
+                    ➕ Create Transaction
+                </button>
+
+                <div id="transactionResults" style="margin-top: 20px;"></div>
+            </div>
+
+            <div class="card">
                 <h2>📚 Plaid API Reference</h2>
                 <p>View all Plaid APIs used in this application with parameters and examples</p>
 

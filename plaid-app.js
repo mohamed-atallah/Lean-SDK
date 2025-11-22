@@ -461,6 +461,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Populate account filter checkboxes for balance filtering
                 populateAccountFilterCheckboxes(accounts);
 
+                // Populate transaction dropdown with fetched accounts
+                populateTransactionDropdown(accounts, accessToken, data.item?.institution_id);
+
                 // Show the balances card
                 const plaidBalancesCard = document.getElementById('plaidBalancesCard');
                 if (plaidBalancesCard) {
@@ -910,6 +913,68 @@ document.addEventListener('DOMContentLoaded', function() {
                         </p>
                     </div>
                 `;
+            }
+
+            // Populate transaction dropdown with individual accounts (fetch live data from Plaid)
+            const transactionSelect = document.getElementById('transactionConnectionSelect');
+            if (transactionSelect && connections.length > 0) {
+                console.log('🔄 Fetching live account data for transaction dropdown...');
+
+                let options = '<option value="">-- Select an account --</option>';
+                let totalAccounts = 0;
+
+                // Fetch accounts with balances for each connection
+                for (const conn of connections) {
+                    const institutionName = conn.institution_name || 'Unknown Bank';
+                    const accessToken = conn.access_token;
+
+                    try {
+                        // Fetch live account data with balances from Plaid API
+                        const accountsResponse = await fetch('http://localhost:8000/api/plaid/balances', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                access_token: accessToken
+                            })
+                        });
+
+                        const accountsData = await accountsResponse.json();
+
+                        if (accountsResponse.ok && accountsData.accounts) {
+                            const accounts = accountsData.accounts;
+
+                            if (accounts.length > 0) {
+                                // Add optgroup for this bank
+                                options += `<optgroup label="🏦 ${institutionName}">`;
+
+                                for (const account of accounts) {
+                                    const accountName = account.name || 'Account';
+                                    const accountType = account.subtype || account.type || 'Unknown';
+                                    const balance = account.balances?.current !== undefined
+                                        ? `$${account.balances.current.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                                        : 'N/A';
+                                    const accountId = account.account_id || '';
+
+                                    // Store access_token as value (Plaid API requirement)
+                                    // Display: Account Name - Type - Balance
+                                    options += `<option value="${accessToken}" data-account-id="${accountId}">`;
+                                    options += `${accountName} (${accountType}) - ${balance}`;
+                                    options += `</option>`;
+                                    totalAccounts++;
+                                }
+
+                                options += `</optgroup>`;
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`❌ Failed to fetch accounts for ${institutionName}:`, error);
+                    }
+                }
+
+                transactionSelect.innerHTML = options;
+                console.log('✅ Transaction dropdown populated with', totalAccounts, 'accounts from', connections.length, 'banks');
             }
 
             listBtn.disabled = false;
@@ -1809,6 +1874,215 @@ document.addEventListener('DOMContentLoaded', function() {
     const fetchPlaidBalancesBtn = document.getElementById('fetchPlaidBalancesBtn');
     if (fetchPlaidBalancesBtn) {
         fetchPlaidBalancesBtn.addEventListener('click', fetchPlaidBalances);
+    }
+
+    /**
+     * Populate Transaction Dropdown
+     * Called after fetching accounts to populate the transaction creation dropdown
+     */
+    function populateTransactionDropdown(accounts, accessToken, institutionId = null) {
+        const transactionSelect = document.getElementById('transactionConnectionSelect');
+        if (!transactionSelect || !accounts || accounts.length === 0) {
+            return;
+        }
+
+        console.log('🔄 Populating transaction dropdown with', accounts.length, 'accounts');
+
+        // Get institution name from localStorage or use institution_id
+        let institutionName = 'Unknown Bank';
+        const savedInstitution = localStorage.getItem('plaid_institution_name');
+        if (savedInstitution) {
+            institutionName = savedInstitution;
+        } else if (institutionId) {
+            institutionName = institutionId;
+        }
+
+        let options = '<option value="">-- Select an account --</option>';
+        options += `<optgroup label="🏦 ${institutionName}">`;
+
+        for (const account of accounts) {
+            const accountName = account.name || 'Account';
+            const accountType = account.subtype || account.type || 'Unknown';
+            const balance = account.balances?.current !== undefined
+                ? `$${account.balances.current.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                : 'N/A';
+            const accountId = account.account_id || '';
+
+            // Store access_token as value (Plaid API requirement)
+            // Display: Account Name - Type - Balance
+            options += `<option value="${accessToken}" data-account-id="${accountId}">`;
+            options += `${accountName} (${accountType}) - ${balance}`;
+            options += `</option>`;
+        }
+
+        options += `</optgroup>`;
+        transactionSelect.innerHTML = options;
+
+        console.log('✅ Transaction dropdown populated with', accounts.length, 'accounts from', institutionName);
+    }
+
+    /**
+     * Create Sandbox Transaction
+     */
+    async function createTransaction() {
+        console.log('💰 Creating sandbox transaction...');
+
+        const createBtn = document.getElementById('createTransactionBtn');
+        const resultsDiv = document.getElementById('transactionResults');
+        const connectionSelect = document.getElementById('transactionConnectionSelect');
+        const amountInput = document.getElementById('transactionAmount');
+        const nameInput = document.getElementById('transactionName');
+        const descriptionInput = document.getElementById('transactionDescription');
+        const dateInput = document.getElementById('transactionDate');
+
+        // Validate inputs
+        if (!connectionSelect.value) {
+            resultsDiv.innerHTML = `
+                <div class="status-badge status-error">❌ Validation Error</div>
+                <div class="response-item">
+                    <p style="color: #f56565; margin: 0;">Please select an account first</p>
+                </div>
+            `;
+            resultsDiv.style.display = 'block';
+            return;
+        }
+
+        if (!amountInput.value || !nameInput.value) {
+            resultsDiv.innerHTML = `
+                <div class="status-badge status-error">❌ Validation Error</div>
+                <div class="response-item">
+                    <p style="color: #f56565; margin: 0;">Amount and Transaction Name are required</p>
+                </div>
+            `;
+            resultsDiv.style.display = 'block';
+            return;
+        }
+
+        // Disable button and show loading
+        createBtn.disabled = true;
+        createBtn.textContent = 'Creating Transaction...';
+
+        resultsDiv.innerHTML = '<p class="loading">Creating transaction...</p>';
+        resultsDiv.style.display = 'block';
+
+        try {
+            const accessToken = connectionSelect.value;
+            const selectedOption = connectionSelect.options[connectionSelect.selectedIndex];
+            const accountId = selectedOption.getAttribute('data-account-id');
+            const accountDisplay = selectedOption.text;
+            const amount = parseFloat(amountInput.value);
+            const name = nameInput.value.trim();
+            const description = descriptionInput.value.trim() || name;
+            const date = dateInput.value || new Date().toISOString().split('T')[0];
+
+            console.log('📤 Transaction Details:', {
+                account: accountDisplay,
+                account_id: accountId,
+                amount,
+                name,
+                description,
+                date,
+                type: amount >= 0 ? 'deposit' : 'withdrawal'
+            });
+
+            const response = await fetch('http://localhost:8000/api/plaid/create-transaction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    access_token: accessToken,
+                    amount: amount,
+                    name: name,
+                    description: description,
+                    date: date
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                console.log('✅ Transaction created successfully:', data);
+
+                resultsDiv.innerHTML = `
+                    <div class="status-badge status-success">✅ Transaction Created</div>
+                    <div class="response-item">
+                        <h3 style="color: #48bb78; margin-bottom: 10px;">Transaction Details:</h3>
+                        <p><strong>Account:</strong> ${accountDisplay}</p>
+                        <p><strong>Amount:</strong> ${amount >= 0 ? '+' : ''}$${amount.toFixed(2)} ${amount >= 0 ? '(Deposit)' : '(Withdrawal)'}</p>
+                        <p><strong>Name:</strong> ${name}</p>
+                        <p><strong>Description:</strong> ${description}</p>
+                        <p><strong>Date:</strong> ${date}</p>
+                    </div>
+                    <div class="info-box" style="background: #e6fffa; border-left: 4px solid #00d4aa; padding: 15px; margin-top: 15px;">
+                        <p style="margin: 0; color: #00695c;">
+                            ✅ <strong>Success!</strong> Transaction record created in sandbox.
+                            <br>📋 <strong>View Transaction:</strong> Click "📋 Get Transactions" button on your account to see this transaction
+                            <br>🔔 A webhook event has been triggered automatically.
+                        </p>
+                    </div>
+                    <div class="info-box" style="background: #fff9e6; border-left: 4px solid #f6ad55; padding: 15px; margin-top: 10px;">
+                        <p style="margin: 0; color: #744210; font-size: 0.9em;">
+                            ℹ️ <strong>Sandbox Limitation:</strong> Account balances do NOT update in Plaid Sandbox when transactions are created.
+                            <br>Transaction records are created and visible in transaction history, but balances remain static.
+                            <br>In production with real banks, balances would update automatically.
+                        </p>
+                    </div>
+                `;
+
+                // Clear form
+                amountInput.value = '';
+                nameInput.value = '';
+                descriptionInput.value = '';
+                dateInput.value = '';
+            } else {
+                throw new Error(data.error || 'Failed to create transaction');
+            }
+        } catch (error) {
+            console.error('❌ Transaction creation failed:', error);
+
+            let errorMessage = error.message;
+            let helpText = '';
+
+            // Check if it's a credentials error
+            if (errorMessage.includes('user_transactions_dynamic')) {
+                helpText = `
+                    <div class="help-box" style="background: #fff9e6; border-left: 4px solid #f6ad55; padding: 15px; margin-top: 15px;">
+                        <h4 style="margin-top: 0;">⚠️ Wrong Test User</h4>
+                        <p style="margin-bottom: 10px;">This transaction was created with a different test user. To use transaction creation:</p>
+                        <ol style="margin: 10px 0 0 20px;">
+                            <li>Connect a new bank using Plaid Link</li>
+                            <li>Search for "First Platypus Bank"</li>
+                            <li>Use credentials: <code>user_transactions_dynamic</code> / <code>pass_good</code></li>
+                            <li>Try creating the transaction again</li>
+                        </ol>
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="status-badge status-error">❌ Creation Failed</div>
+                <div class="response-item">
+                    <p style="color: #f56565; margin: 0;"><strong>Error:</strong> ${errorMessage}</p>
+                </div>
+                ${helpText}
+            `;
+        } finally {
+            createBtn.disabled = false;
+            createBtn.textContent = '➕ Create Transaction';
+        }
+    }
+
+    // Attach event listener for transaction creation
+    const createTransactionBtn = document.getElementById('createTransactionBtn');
+    if (createTransactionBtn) {
+        createTransactionBtn.addEventListener('click', createTransaction);
+    }
+
+    // Set default date to today
+    const transactionDateInput = document.getElementById('transactionDate');
+    if (transactionDateInput) {
+        transactionDateInput.value = new Date().toISOString().split('T')[0];
     }
 
     // Check if Plaid Link script is loaded

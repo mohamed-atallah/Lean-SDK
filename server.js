@@ -796,6 +796,52 @@ function saveWebhookEvent(webhookData) {
 }
 
 /**
+ * Create Sandbox Transaction (Sandbox only)
+ *
+ * ⚠️ IMPORTANT: This endpoint only works with Items created using
+ * the 'user_transactions_dynamic' test user credentials.
+ *
+ * Allows adding up to 10 custom transactions at a time to increase
+ * or decrease account balances in Sandbox mode.
+ *
+ * @param {string} accessToken - Plaid access token
+ * @param {Array} transactions - Array of transaction objects
+ * @param {string} transactions[].date_transacted - Transaction date (YYYY-MM-DD)
+ * @param {string} transactions[].date_posted - Posted date (YYYY-MM-DD)
+ * @param {number} transactions[].amount - Amount (positive = deposit, negative = withdrawal)
+ * @param {string} transactions[].name - Transaction name
+ * @param {string} transactions[].description - Transaction description (optional)
+ * @param {string} transactions[].currency_code - Currency code (default: USD)
+ */
+async function createPlaidTransaction(accessToken, transactions) {
+    console.log('💰 Creating Plaid Sandbox Transactions...');
+    console.log(`   Creating ${transactions.length} transaction(s)`);
+
+    const postData = JSON.stringify({
+        client_id: PLAID_CONFIG.client_id,
+        secret: PLAID_CONFIG.secret,
+        access_token: accessToken,
+        transactions: transactions
+    });
+
+    const data = await makeRequest(`${PLAID_CONFIG.api_url}/sandbox/transactions/create`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+        }
+    }, postData);
+
+    console.log('✅ Plaid Transactions created successfully');
+    console.log('   Total transactions:', transactions.length);
+    transactions.forEach((tx, i) => {
+        console.log(`   ${i + 1}. Amount: ${tx.amount >= 0 ? '+' : ''}$${tx.amount.toFixed(2)}, Date: ${tx.date_posted}`);
+    });
+
+    return data;
+}
+
+/**
  * Get Available Lean Banks/Entities
  */
 async function getLeanBanks() {
@@ -1706,6 +1752,61 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: error.message }));
         }
+        return;
+    }
+
+    // API endpoint: Create Sandbox Transaction (Sandbox Testing)
+    if (req.url === '/api/plaid/create-transaction' && req.method === 'POST') {
+        let body = '';
+
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', async () => {
+            try {
+                const { access_token, amount, name, description, date } = JSON.parse(body);
+
+                if (!access_token || amount === undefined || !name) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: 'access_token, amount, and name are required'
+                    }));
+                    return;
+                }
+
+                // Create transaction object
+                // Note: Plaid's /sandbox/transactions/create accepts:
+                // date_transacted, date_posted, amount, description (required)
+                // Does NOT accept: name, currency_code
+                const transactionDate = date || new Date().toISOString().split('T')[0];
+                const transactions = [{
+                    date_transacted: transactionDate,
+                    date_posted: transactionDate,
+                    amount: parseFloat(amount),
+                    description: description || name || 'Transaction'
+                }];
+
+                // Log transaction details (name/description are for our records only)
+                console.log(`   Transaction: ${name} - ${parseFloat(amount) >= 0 ? '+' : ''}$${parseFloat(amount).toFixed(2)}`);
+                console.log(`   Description: ${description || name}`);
+
+                const result = await createPlaidTransaction(access_token, transactions);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Transaction created successfully',
+                    transaction_name: name,
+                    transaction_description: description || name,
+                    result: result
+                }));
+            } catch (error) {
+                console.error('❌ Create Transaction Failed:', error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: error.message }));
+            }
+        });
         return;
     }
 
